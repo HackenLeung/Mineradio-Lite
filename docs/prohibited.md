@@ -90,7 +90,7 @@
 
 - `webSecurity: false` 解决跨域；关闭 `contextIsolation`；开启 `nodeIntegration`（主窗口须维持 `contextIsolation:true, nodeIntegration:false`）
 - 外部数据（歌名 / 歌词 / 评论 / 歌单名 / 用户昵称）直接拼 `innerHTML` —— 一律 `textContent`；确需生成 HTML 时统一转义（提供单一 `escapeHtml` 工具，禁止散拼）
-- 裸 `node server.js` 调试（默认绑 `0.0.0.0`）—— 必须 `HOST=127.0.0.1 node server.js`
+- 裸 `node server.js` 调试（默认绑 `0.0.0.0`）—— Windows PowerShell 须两行强制回环：`$env:HOST='127.0.0.1'` 后 `node server.js`（**不用**类 Unix 的 `HOST=127.0.0.1 node server.js`）；npm script 用 `cross-env HOST=127.0.0.1 node server.js`
 - 主窗口导航到任意外部页面；外链未经 `shell.openExternal` 且未校验 `http:/https:` scheme
 - IPC handler 不校验 `event.sender` 来源
 - 关闭已有的导航拦截（`setWindowOpenHandler` deny + 外链转系统浏览器，main.js:1716-1719 保留）

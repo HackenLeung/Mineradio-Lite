@@ -75,9 +75,9 @@
 13. 提交阶段 0 实际运行结果 + 验收证据（见下）。
 
 **阶段 0 验收证据**：文件清单 · `npm start` 运行结果 · DevTools 控制台无错 ·
-grep 证明无壁纸/three/skull · **grep 证明无 `startDesktopLyricsMousePoller`/PowerShell 轮询、无 `CHROMIUM_PERFORMANCE_SWITCHES`** ·
+grep 证明无壁纸/three/skull · **grep/代码审查证明不存在 `force_high_performance_gpu`、`ignore-gpu-blocklist`、`enable-gpu-rasterization`、`enable-oop-rasterization`、`enable-zero-copy`、`enable-accelerated-2d-canvas`、`use-angle` 等被禁止的 GPU 强制项，及无 `startDesktopLyricsMousePoller`/PowerShell 轮询；`autoplay-policy` 按功能测试结论单独记录（保留/删除均可，附首次播放/托盘/全局热键/自动下一首验证）** ·
 **`netstat`/日志证明监听 `127.0.0.1`（非 `0.0.0.0`）** · **安全基线证据（will-navigate/openHandler/IPC sender 校验/CSP/contextIsolation 配置截图或代码位置）** ·
-**桌面歌词暂停 10min 全进程漂移数据（`getAppMetrics()` 覆盖主进程+所有子进程，证明无 24ms 级常驻子进程）** ·
+**桌面歌词暂停 10min 漂移数据：Electron/Chromium 关联进程用 `app.getAppMetrics()`；外部进程用 `Get-CimInstance Win32_Process` 按 `ParentProcessId` 追踪 Mineradio 进程树，列出全部纳入统计的 PID，证明不存在由 Mineradio 启动的常驻 `powershell.exe` 或其他外部轮询进程** ·
 性能基线数据 · 桌面歌词方案文档 · 已知问题/未完成项。
 
 ---
