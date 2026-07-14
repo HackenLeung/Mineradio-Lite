@@ -3,41 +3,112 @@
 <head>
   <meta charset="utf-8" />
   <!--
-    Mineradio Lite — 阶段 0 占位页。
-    安全基线（见 docs/prohibited.md §6 / docs/implementation-plan.md 阶段 0 任务 6）：
-    server.js 的 serveStatic 不发 CSP 响应头，故用 <meta http-equiv> 声明 CSP。
-    严格策略：default-src 'none'；脚本/样式只允许同源外部文件（无内联脚本/样式，
-    从占位阶段起即遵守，不留「先不安全后整改」的口子）；connect/img/font 限同源。
+    Mineradio Lite — 静态大封面播放器 MVP
+    CSP：无内联脚本/样式；connect/img 限同源（封面/音频走本地代理）。
+    meta CSP 不支持 frame-ancestors。
   -->
-  <!-- meta CSP 不支持 frame-ancestors（Chromium 会警告并忽略），故不写该指令。 -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Mineradio Lite — 阶段 0</title>
-  <!-- perf-probe 必须最早注入：置于 head 首个脚本，早于任何应用代码。 -->
+  <title>Mineradio Lite</title>
   <script src="/js/perf-probe.js"></script>
-  <link rel="stylesheet" href="/css/placeholder.css" />
+  <link rel="stylesheet" href="/css/variables.css" />
+  <link rel="stylesheet" href="/css/layout.css" />
+  <link rel="stylesheet" href="/css/components.css" />
+  <link rel="stylesheet" href="/css/player.css" />
 </head>
-<body class="ph-body">
-  <main class="ph-shell">
-    <h1 class="ph-title">Mineradio Lite</h1>
-    <p class="ph-sub">阶段 0 — 地基占位页（非业务功能）</p>
+<body>
+  <div id="album-bg" aria-hidden="true">
+    <div id="bg-a" class="bg-img"></div>
+    <div id="bg-b" class="bg-img"></div>
+    <div class="bg-veil"></div>
+  </div>
 
-    <section class="ph-card">
-      <h2 class="ph-card-title">应用版本 <code>/api/app/version</code></h2>
-      <dl class="ph-kv" id="version-kv"><dd class="ph-loading">加载中…</dd></dl>
-    </section>
+  <div id="app">
+    <header id="titlebar" class="titlebar">
+      <div class="brand">Mineradio <span>Lite</span></div>
+      <form id="search-form" class="search-wrap" autocomplete="off">
+        <input id="search-input" class="field" type="search" placeholder="搜索歌曲 / 歌手" enterkeyhint="search" />
+      </form>
+      <div class="tabs" title="搜索源">
+        <button type="button" data-provider="netease" class="active">网易云</button>
+        <button type="button" data-provider="kugou">酷狗</button>
+      </div>
+      <div class="win-controls">
+        <button type="button" id="btn-min" title="最小化">─</button>
+        <button type="button" id="btn-max" title="最大化">□</button>
+        <button type="button" id="btn-close" class="close" title="关闭">×</button>
+      </div>
+    </header>
 
-    <section class="ph-card">
-      <h2 class="ph-card-title">发现首页 <code>/api/discover/home</code></h2>
-      <div class="ph-discover" id="discover-box"><span class="ph-loading">加载中…</span></div>
-    </section>
+    <div class="main">
+      <section class="stage">
+        <div class="cover-stage" id="cover-stage">
+          <div id="cover-placeholder" class="placeholder">大封面</div>
+          <img id="cover-a" alt="" draggable="false" />
+          <img id="cover-b" alt="" draggable="false" />
+        </div>
+        <div class="now-meta">
+          <h1 id="now-title" class="title">尚未播放</h1>
+          <p id="now-sub" class="sub">搜索并点选歌曲</p>
+          <div class="badges">
+            <span id="badge-trial" class="badge trial" hidden>试听</span>
+            <span id="badge-quality" class="badge quality" hidden></span>
+          </div>
+          <p id="home-hint" class="sub" style="margin-top:14px;font-size:12px;color:var(--fg-mute)"></p>
+        </div>
+      </section>
 
-    <section class="ph-card">
-      <h2 class="ph-card-title">性能探针 <code>window.__perf</code></h2>
-      <pre class="ph-perf" id="perf-box">等待探针快照…</pre>
-    </section>
-  </main>
-  <!-- 占位逻辑外置（CSP 禁内联脚本）。外部数据一律 textContent，禁止 innerHTML 拼接。 -->
-  <script src="/js/placeholder.js" defer></script>
+      <aside id="side" class="side">
+        <div class="side-head">
+          <h2>搜索结果</h2>
+          <span id="side-status" style="font-size:12px;color:var(--fg-mute)"></span>
+        </div>
+        <div id="search-results" class="side-body song-list"></div>
+        <div class="side-head" style="border-top:1px solid var(--line)">
+          <h2>播放队列</h2>
+          <span id="app-version-label" style="font-size:11px;color:var(--fg-mute)"></span>
+        </div>
+        <div id="queue-list" class="side-body song-list" style="flex:0.9"></div>
+      </aside>
+    </div>
+
+    <footer class="bottombar">
+      <div class="transport-meta">
+        <img id="mini-cover" class="mini-cover" alt="" />
+        <div class="texts">
+          <div id="mini-title" class="t">未播放</div>
+          <div id="mini-artist" class="a"></div>
+        </div>
+      </div>
+
+      <div class="transport-center">
+        <div class="transport-btns">
+          <button type="button" id="btn-mode" class="icon-btn" title="播放模式">➡</button>
+          <button type="button" id="btn-prev" class="icon-btn" title="上一首">⏮</button>
+          <button type="button" id="btn-play" class="icon-btn primary" title="播放/暂停">▶</button>
+          <button type="button" id="btn-next" class="icon-btn" title="下一首">⏭</button>
+        </div>
+        <div class="progress-row">
+          <span id="time-cur" class="time">0:00</span>
+          <input id="seek" class="slider" type="range" min="0" max="0" value="0" step="0.1" />
+          <span id="time-dur" class="time">0:00</span>
+        </div>
+      </div>
+
+      <div class="transport-extra">
+        <button type="button" id="btn-mute" class="icon-btn" title="静音">🔊</button>
+        <div class="volume-wrap">
+          <input id="volume" class="slider" type="range" min="0" max="1" step="0.01" value="0.85" />
+        </div>
+        <div class="quality-menu">
+          <button type="button" id="btn-quality" class="chip" title="音质">音质</button>
+          <div id="quality-pop" class="quality-pop"></div>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <div id="toast-host" class="toast-host"></div>
+  <script type="module" src="/js/app.js"></script>
 </body>
 </html>

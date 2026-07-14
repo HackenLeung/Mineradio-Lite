@@ -1,0 +1,26 @@
+/* Mineradio Lite — 设计变量（品牌中性深色 + 青绿强调） */
+:root {
+  --bg-0: #0b0d10;
+  --bg-1: #12161c;
+  --bg-2: #1a2028;
+  --bg-glass: rgba(18, 22, 28, 0.72);
+  --bg-glass-strong: rgba(12, 15, 20, 0.88);
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.14);
+  --fg: #eef3f7;
+  --fg-dim: #9aa7b5;
+  --fg-mute: #6b7886;
+  --accent: #4db6ac;
+  --accent-2: #80cbc4;
+  --danger: #e57373;
+  --shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+  --radius: 14px;
+  --radius-sm: 10px;
+  --titlebar-h: 44px;
+  --bottom-h: 92px;
+  --side-w: 300px;
+  --font: "Segoe UI", "Microsoft YaHei", system-ui, sans-serif;
+  --mono: "Cascadia Code", Consolas, monospace;
+  --ease: cubic-bezier(0.22, 0.8, 0.28, 1);
+  --cover-size: min(42vh, 360px);
+}
