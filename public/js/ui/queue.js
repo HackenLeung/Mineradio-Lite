@@ -57,6 +57,7 @@ function renderList(host, songs, activeId) {
       // 若在搜索结果面板，用 playSong 入队；队列面板用 playAt
       if (host.dataset.mode === 'queue') store.playAt(idx);
       else player.playSong(song, { enqueue: true });
+      bus.emit('navigate', 'player');
     });
     frag.appendChild(btn);
   });
@@ -64,9 +65,11 @@ function renderList(host, songs, activeId) {
 }
 
 export function mountSide(root) {
-  const resultsEl = root.querySelector('#search-results');
+  const resultsEl = document.getElementById('search-results');
   const queueEl = root.querySelector('#queue-list');
-  const statusEl = root.querySelector('#side-status');
+  const statusEl = document.getElementById('side-status');
+  const headingEl = document.getElementById('search-heading');
+  const countEl = document.getElementById('queue-count');
   resultsEl.dataset.mode = 'search';
   queueEl.dataset.mode = 'queue';
 
@@ -75,6 +78,7 @@ export function mountSide(root) {
   }
 
   bus.on('search-start', (kw) => {
+    if (headingEl) headingEl.textContent = `搜索「${kw}」`;
     setStatus(`搜索「${kw}」…`);
     while (resultsEl.firstChild) resultsEl.removeChild(resultsEl.firstChild);
     const loading = document.createElement('div');
@@ -91,6 +95,7 @@ export function mountSide(root) {
 
   bus.on('store', (s) => {
     renderList(queueEl, s.queue, s.now && s.now.id);
+    if (countEl) countEl.textContent = `${s.queue.length} 首`;
     if (s.searchResults && s.searchResults.length) {
       renderList(resultsEl, s.searchResults, s.now && s.now.id);
     }

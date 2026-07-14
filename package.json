@@ -10,6 +10,7 @@
     "start": "electron .",
     "dev:server": "cross-env HOST=127.0.0.1 node server.js",
     "verify:gui": "node scripts/gui-verify.js",
+    "test:ui-state": "node scripts/ui-state-test.mjs",
     "verify:perf": "node scripts/perf-baseline.js",
     "build:win": "electron-builder --win nsis",
     "build:win:dir": "electron-builder --win dir"

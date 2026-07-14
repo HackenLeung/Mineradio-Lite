@@ -183,3 +183,37 @@
   color: #ffd54f;
   font-size: 10px;
 }
+
+/* 原版主舞台位置由轻量封面 + DOM 歌词接替。 */
+.stage {
+  align-items:center;
+  justify-content:center;
+  flex-direction:row;
+  gap:clamp(30px,5vw,76px);
+  padding:clamp(28px,5vw,72px);
+  overflow:hidden;
+}
+.player-visual {
+  width:min(42%,430px);
+  min-width:260px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:20px;
+}
+.stage .cover-stage { width:min(38vw,42vh,430px); height:min(38vw,42vh,430px); }
+.stage .now-meta { width:100%; }
+.stage .lyrics-panel { width:min(48%,620px); height:min(62vh,580px); max-height:none; margin:0; }
+.stage .lyrics-scroller { max-height:none; min-height:260px; }
+
+@media (max-width:900px) {
+  .stage { gap:26px; padding:30px 24px; }
+  .player-visual { min-width:210px; }
+  .stage .cover-stage { width:min(34vw,310px); height:min(34vw,310px); }
+}
+@media (max-width:650px) {
+  .stage { flex-direction:column; overflow:auto; justify-content:flex-start; }
+  .player-visual,.stage .lyrics-panel { width:min(100%,520px); }
+  .stage .cover-stage { width:min(65vw,300px); height:min(65vw,300px); }
+  .stage .lyrics-panel { min-height:300px; }
+}

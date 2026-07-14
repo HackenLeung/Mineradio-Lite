@@ -110,12 +110,6 @@
 .lyrics-status[data-kind='error'] { color: var(--danger); }
 .lyrics-status[data-kind='instrumental'] { color: var(--accent-2); }
 
-/* 舞台：封面 + 歌词纵向 */
-.stage {
-  justify-content: flex-start;
-  padding-top: 18px;
-  overflow: auto;
-}
 .stage .cover-stage {
   flex: 0 0 auto;
 }

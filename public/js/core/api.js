@@ -39,6 +39,19 @@ export async function fetchDiscoverHome() {
   return getJson('/api/discover/home');
 }
 
+export async function fetchLoginStatus() {
+  return getJson(`/api/login/status?t=${Date.now()}`);
+}
+
+export async function fetchPlaylistTracks(id) {
+  return getJson(`/api/playlist/tracks?id=${encodeURIComponent(id)}`);
+}
+
+export async function fetchPodcastPrograms(id, limit = 30) {
+  const q = new URLSearchParams({ id: String(id || ''), limit: String(limit), offset: '0' });
+  return getJson(`/api/podcast/programs?${q}`);
+}
+
 export async function searchNetease(keywords, limit = 30) {
   const q = new URLSearchParams({ keywords: String(keywords || ''), limit: String(limit) });
   return getJson(`/api/search?${q}`);

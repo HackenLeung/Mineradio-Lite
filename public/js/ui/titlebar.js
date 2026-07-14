@@ -64,6 +64,8 @@ export function mountTitlebar(root) {
     e.preventDefault();
     const keywords = String(input.value || '').trim();
     if (!keywords) return;
+    saveSearchHistory(keywords);
+    bus.emit('navigate', 'search');
     store.patch({ searching: true, searchError: '', searchKeywords: keywords, searchResults: [] });
     bus.emit('search-start', keywords);
     try {
@@ -86,4 +88,13 @@ export function mountTitlebar(root) {
   root.querySelector('#btn-min')?.addEventListener('click', () => desktop.minimize());
   root.querySelector('#btn-max')?.addEventListener('click', () => desktop.toggleMaximize());
   root.querySelector('#btn-close')?.addEventListener('click', () => desktop.close());
+}
+
+function saveSearchHistory(keyword) {
+  try {
+    const old = JSON.parse(localStorage.getItem('mineradio-lite-search-history') || '[]');
+    const next = [keyword].concat(Array.isArray(old) ? old.filter((x) => x !== keyword) : []).slice(0, 10);
+    localStorage.setItem('mineradio-lite-search-history', JSON.stringify(next));
+    bus.emit('search-history-changed', next);
+  } catch (_) {}
 }

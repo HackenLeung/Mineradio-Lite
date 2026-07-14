@@ -2,11 +2,6 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
-  <!--
-    Mineradio Lite — 静态大封面播放器 MVP
-    CSP：无内联脚本/样式；connect/img 限同源（封面/音频走本地代理）。
-    meta CSP 不支持 frame-ancestors。
-  -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Mineradio Lite</title>
@@ -19,105 +14,73 @@
 </head>
 <body>
   <div id="album-bg" aria-hidden="true">
-    <div id="bg-a" class="bg-img"></div>
-    <div id="bg-b" class="bg-img"></div>
-    <div class="bg-veil"></div>
+    <div id="bg-a" class="bg-img"></div><div id="bg-b" class="bg-img"></div><div class="bg-veil"></div>
   </div>
 
   <div id="app">
     <header id="titlebar" class="titlebar">
-      <div class="brand">Mineradio <span>Lite</span></div>
+      <button type="button" class="brand" data-route="home" aria-label="返回首页">Mine<span>radio</span> <small>Lite</small></button>
       <form id="search-form" class="search-wrap" autocomplete="off">
-        <input id="search-input" class="field" type="search" placeholder="搜索歌曲 / 歌手" enterkeyhint="search" />
+        <input id="search-input" class="field" type="search" placeholder="搜索歌曲、歌手…" enterkeyhint="search" />
       </form>
       <div class="tabs" title="搜索源">
-        <button type="button" data-provider="netease" class="active">网易云</button>
-        <button type="button" data-provider="kugou">酷狗</button>
+        <button type="button" data-provider="netease" class="active">NE</button>
+        <button type="button" data-provider="kugou">KG</button>
       </div>
+      <div id="account-state" class="account-pill" title="账号状态">未登录</div>
       <div class="win-controls">
-        <button type="button" id="btn-min" title="最小化">─</button>
-        <button type="button" id="btn-max" title="最大化">□</button>
-        <button type="button" id="btn-close" class="close" title="关闭">×</button>
+        <button type="button" id="btn-min" title="最小化">─</button><button type="button" id="btn-max" title="最大化">□</button><button type="button" id="btn-close" class="close" title="关闭">×</button>
       </div>
     </header>
 
     <div class="main">
-      <section class="stage">
-        <div class="cover-stage" id="cover-stage">
-          <div id="cover-placeholder" class="placeholder">大封面</div>
-          <img id="cover-a" alt="" draggable="false" />
-          <img id="cover-b" alt="" draggable="false" />
-        </div>
-        <div class="now-meta">
-          <h1 id="now-title" class="title">尚未播放</h1>
-          <p id="now-sub" class="sub">搜索并点选歌曲</p>
-          <div class="badges">
-            <span id="badge-trial" class="badge trial" hidden>试听</span>
-            <span id="badge-quality" class="badge quality" hidden></span>
-          </div>
-          <p id="home-hint" class="sub" style="margin-top:14px;font-size:12px;color:var(--fg-mute)"></p>
-        </div>
-
-        <section class="lyrics-panel" id="lyrics-panel" aria-label="滚动歌词">
-          <div class="lyrics-toolbar">
-            <span class="label">歌词</span>
-            <button type="button" id="btn-toggle-trans" class="chip" hidden title="显示/隐藏翻译">翻译</button>
-          </div>
-          <p id="lyrics-status" class="lyrics-status">播放歌曲后显示歌词</p>
-          <div id="lyrics-scroller" class="lyrics-scroller"></div>
-        </section>
-      </section>
-
       <aside id="side" class="side">
-        <div class="side-head">
-          <h2>搜索结果</h2>
-          <span id="side-status" style="font-size:12px;color:var(--fg-mute)"></span>
-        </div>
-        <div id="search-results" class="side-body song-list"></div>
-        <div class="side-head" style="border-top:1px solid var(--line)">
-          <h2>播放队列</h2>
-          <span id="app-version-label" style="font-size:11px;color:var(--fg-mute)"></span>
-        </div>
-        <div id="queue-list" class="side-body song-list" style="flex:0.9"></div>
+        <nav class="primary-nav" aria-label="主要页面">
+          <button type="button" class="nav-item active" data-route="home"><span>⌂</span>首页</button>
+          <button type="button" class="nav-item" data-route="player"><span>♫</span>正在播放</button>
+          <button type="button" class="nav-item" data-route="search"><span>⌕</span>搜索</button>
+        </nav>
+        <div class="side-section-title"><span>当前队列</span><span id="queue-count">0 首</span></div>
+        <div id="queue-list" class="side-body song-list" data-mode="queue"></div>
+        <div class="side-foot"><span id="app-version-label"></span></div>
       </aside>
+
+      <main id="workspace" class="workspace">
+        <section id="home-view" class="page-view active" data-view="home" aria-label="首页">
+          <div class="page-scroll">
+            <div class="page-heading"><div><span class="eyebrow">MINERADIO HOME</span><h1 id="home-greeting">晚上好</h1><p id="home-summary">正在读取你的音乐内容…</p></div><button type="button" id="home-refresh" class="chip">刷新</button></div>
+            <section id="home-history-section" class="content-section" hidden><div class="section-head"><h2>最近搜索</h2><button type="button" id="clear-search-history">清空</button></div><div id="search-history" class="keyword-row"></div></section>
+            <section id="home-daily-section" class="content-section" hidden><div class="section-head"><h2>每日推荐</h2><button type="button" id="play-daily">播放全部</button></div><div id="home-daily" class="track-grid"></div></section>
+            <section id="home-playlists-section" class="content-section" hidden><div class="section-head"><h2>为你推荐的歌单</h2></div><div id="home-playlists" class="card-grid"></div></section>
+            <section id="home-podcasts-section" class="content-section" hidden><div class="section-head"><h2>热门播客</h2></div><div id="home-podcasts" class="card-grid"></div></section>
+            <div id="home-empty" class="home-empty" hidden><strong>登录后同步每日推荐和私人歌单</strong><span>未登录也可以直接搜索网易云或酷狗曲库；你的搜索记录会保存在本机。</span></div>
+          </div>
+        </section>
+
+        <section id="search-view" class="page-view" data-view="search" aria-label="搜索结果">
+          <div class="page-scroll"><div class="page-heading"><div><span class="eyebrow">SEARCH</span><h1 id="search-heading">搜索音乐</h1><p id="side-status">在顶部输入歌曲或歌手</p></div></div><div id="search-results" class="result-list song-list" data-mode="search"></div></div>
+        </section>
+
+        <section id="detail-view" class="page-view" data-view="detail" aria-label="内容详情">
+          <div class="page-scroll"><button type="button" id="detail-back" class="back-btn">← 返回</button><div id="detail-content"></div></div>
+        </section>
+
+        <section class="stage page-view" id="player-view" data-view="player" aria-label="正在播放">
+          <div class="player-visual">
+            <div class="cover-stage" id="cover-stage"><div id="cover-placeholder" class="placeholder">大封面</div><img id="cover-a" alt="" draggable="false" /><img id="cover-b" alt="" draggable="false" /></div>
+            <div class="now-meta"><h1 id="now-title" class="title">尚未播放</h1><p id="now-sub" class="sub">搜索并点选歌曲</p><div class="badges"><span id="badge-trial" class="badge trial" hidden>试听</span><span id="badge-quality" class="badge quality" hidden></span></div></div>
+          </div>
+          <section class="lyrics-panel" id="lyrics-panel" aria-label="滚动歌词"><div class="lyrics-toolbar"><span class="label">歌词</span><button type="button" id="btn-toggle-trans" class="chip" hidden>翻译</button></div><p id="lyrics-status" class="lyrics-status">播放歌曲后显示歌词</p><div id="lyrics-scroller" class="lyrics-scroller"></div></section>
+        </section>
+      </main>
     </div>
 
     <footer class="bottombar">
-      <div class="transport-meta">
-        <img id="mini-cover" class="mini-cover" alt="" />
-        <div class="texts">
-          <div id="mini-title" class="t">未播放</div>
-          <div id="mini-artist" class="a"></div>
-        </div>
-      </div>
-
-      <div class="transport-center">
-        <div class="transport-btns">
-          <button type="button" id="btn-mode" class="icon-btn" title="播放模式">➡</button>
-          <button type="button" id="btn-prev" class="icon-btn" title="上一首">⏮</button>
-          <button type="button" id="btn-play" class="icon-btn primary" title="播放/暂停">▶</button>
-          <button type="button" id="btn-next" class="icon-btn" title="下一首">⏭</button>
-        </div>
-        <div class="progress-row">
-          <span id="time-cur" class="time">0:00</span>
-          <input id="seek" class="slider" type="range" min="0" max="0" value="0" step="0.1" />
-          <span id="time-dur" class="time">0:00</span>
-        </div>
-      </div>
-
-      <div class="transport-extra">
-        <button type="button" id="btn-mute" class="icon-btn" title="静音">🔊</button>
-        <div class="volume-wrap">
-          <input id="volume" class="slider" type="range" min="0" max="1" step="0.01" value="0.85" />
-        </div>
-        <div class="quality-menu">
-          <button type="button" id="btn-quality" class="chip" title="音质">音质</button>
-          <div id="quality-pop" class="quality-pop"></div>
-        </div>
-      </div>
+      <div class="transport-meta"><img id="mini-cover" class="mini-cover" alt="" /><div class="texts"><div id="mini-title" class="t">未播放</div><div id="mini-artist" class="a"></div></div></div>
+      <div class="transport-center"><div class="transport-btns"><button type="button" id="btn-mode" class="icon-btn" title="播放模式">➡</button><button type="button" id="btn-prev" class="icon-btn" title="上一首">⏮</button><button type="button" id="btn-play" class="icon-btn primary" title="播放/暂停">▶</button><button type="button" id="btn-next" class="icon-btn" title="下一首">⏭</button></div><div class="progress-row"><span id="time-cur" class="time">0:00</span><input id="seek" class="slider" type="range" min="0" max="0" value="0" step="0.1" /><span id="time-dur" class="time">0:00</span></div></div>
+      <div class="transport-extra"><button type="button" id="btn-mute" class="icon-btn" title="静音">🔊</button><div class="volume-wrap"><input id="volume" class="slider" type="range" min="0" max="1" step="0.01" value="0.85" /></div><div class="quality-menu"><button type="button" id="btn-quality" class="chip" title="音质">音质</button><div id="quality-pop" class="quality-pop"></div></div></div>
     </footer>
   </div>
-
   <div id="toast-host" class="toast-host"></div>
   <script type="module" src="/js/app.js"></script>
 </body>
