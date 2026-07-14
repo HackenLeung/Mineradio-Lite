@@ -40,8 +40,11 @@
    / `stopDesktopLyricsMousePoller`(main.js:1034-1090)、模块变量(17-18)、两处调用点(1168/1191)；
    不再 `spawn('powershell.exe')` 每 24ms 调 `GetAsyncKeyState`。窗口**未穿透**时交互改用歌词窗自身
    `pointer`/`mouse` DOM 事件。**⚠ 因锁定后 `setIgnoreMouseEvents(true)`(995) 使窗口收不到自身事件，
-   必须落地不依赖窗口自身事件的解锁路径**（全局快捷键 / 托盘「解锁桌面歌词」/ 主窗口开关，均经
-   `setLyricsLockState` IPC，见 prohibited.md §3），并**实测**「锁定→解锁→可再交互」可重复步骤。
+   必须落地不依赖窗口自身事件的解锁路径**。阶段 0 **至少实际落地一条**（不接受仅注释或仅底层 IPC）：
+   优先在**托盘菜单**增加「锁定桌面歌词 / 解锁桌面歌词」项（经共享的 `setDesktopLyricsLocked` +
+   既有 `setLyricsLockState` IPC，见 prohibited.md §3），并**实测**「开启桌面歌词→锁定穿透→托盘解锁→
+   歌词窗口恢复交互」可重复步骤。另删除已无用途的 `spawn`/`execFile`（`child_process`）导入，
+   证明主进程不再具备 spawn 外部进程的能力、无常驻外部轮询进程残留。
    同时审查该窗口 `backgroundThrottling:false`(1159) 与 `transparent:true`(1145)：
    默认恢复后台节流、不依赖窗口透明则改不透明，保留任一项须附性能对比数据。
 4. **删除强制 GPU 开关（与 `autoplay-policy` 分开处理）**：从 `CHROMIUM_PERFORMANCE_SWITCHES`(main.js:62-71)
@@ -59,7 +62,11 @@
 6. **阶段 0 落地安全基线**（不得拖到阶段 6；占位 `index.html` 同样遵守）：
    - 主窗口维持 `contextIsolation:true`、`nodeIntegration:false`，不使用 `webSecurity:false`。
    - `mainWindow` `will-navigate` 同源限制；`setWindowOpenHandler` 校验 `http:/https:` 并 deny + 转系统浏览器。
-   - 每个 IPC handler 校验 `event.sender`/origin。
+   - **IPC sender 严格校验**：校验 `event.senderFrame`（非 `event.sender.getURL()`）——`senderFrame` 必须存在、
+     必须 `=== event.sender.mainFrame`、`new URL(senderFrame.url).origin` 必须**严格等于** `http://127.0.0.1:<mainServerPort>`
+     （禁止 `startsWith`）。
+   - **分窗口 channel allowlist**：`mainWindow` 允许主应用所需 handler；`desktopLyricsWindow` **只允许**必要的
+     `mineradio-desktop-lyrics-*` channel（不得调用登录/文件/下载/更新/重启等主窗口 IPC）；其他窗口/channel 一律拒绝。
    - 主页面（含占位页）设置 CSP。
    - 外部数据统一 `textContent` 或单一 `escapeHtml` 工具，禁止散拼 `innerHTML`。
    - **占位 `index.html` 从一开始就遵守 CSP 与上述约束，不得先写不安全占位代码再等后期整改。**
@@ -76,7 +83,7 @@
 
 **阶段 0 验收证据**：文件清单 · `npm start` 运行结果 · DevTools 控制台无错 ·
 grep 证明无壁纸/three/skull · **grep/代码审查证明不存在 `force_high_performance_gpu`、`ignore-gpu-blocklist`、`enable-gpu-rasterization`、`enable-oop-rasterization`、`enable-zero-copy`、`enable-accelerated-2d-canvas`、`use-angle` 等被禁止的 GPU 强制项，及无 `startDesktopLyricsMousePoller`/PowerShell 轮询；`autoplay-policy` 按功能测试结论单独记录（保留/删除均可，附首次播放/托盘/全局热键/自动下一首验证）** ·
-**`netstat`/日志证明监听 `127.0.0.1`（非 `0.0.0.0`）** · **安全基线证据（will-navigate/openHandler/IPC sender 校验/CSP/contextIsolation 配置截图或代码位置）** ·
+**`netstat`/日志证明监听 `127.0.0.1`（非 `0.0.0.0`）** · **安全基线证据（will-navigate 同源限制 / openHandler http-https 校验 / CSP / contextIsolation 配置代码位置；IPC `senderFrame===mainFrame` + `new URL(senderFrame.url).origin` 严格等于本地 origin 的校验，非 `startsWith`；`mainWindow` 与 `desktopLyricsWindow` 分窗口 channel allowlist——歌词窗仅限必要 `mineradio-desktop-lyrics-*`，不含登录/文件/下载/更新/重启）** · **托盘「锁定/解锁桌面歌词」实测记录（开启→锁定→托盘解锁→恢复交互）** · **grep 证明无 `spawn`/`execFile`/`child_process` 功能残留** ·
 **桌面歌词暂停 10min 漂移数据：Electron/Chromium 关联进程用 `app.getAppMetrics()`；外部进程用 `Get-CimInstance Win32_Process` 按 `ParentProcessId` 追踪 Mineradio 进程树，列出全部纳入统计的 PID，证明不存在由 Mineradio 启动的常驻 `powershell.exe` 或其他外部轮询进程** ·
 性能基线数据 · 桌面歌词方案文档 · 已知问题/未完成项。
 

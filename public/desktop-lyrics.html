@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <!--
+    阶段 0 桌面歌词最小测试桩（临时）。
+    仅用于 IPC / 托盘解锁 / 无 canvas 验收，不代表阶段 3 完成。
+    正式纯 DOM/CSS 重写见 docs/desktop-lyrics-rewrite.md（阶段 3 重新审查）。
+    当前性能数字只代表本测试桩。
+  -->
+  <!-- meta CSP 不支持 frame-ancestors，勿写入。 -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'none'; connect-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Mineradio Lite Desktop Lyrics (Stage0 Stub)</title>
+  <link rel="stylesheet" href="/css/desktop-lyrics.css" />
+</head>
+<body>
+  <div class="wrap">
+    <div id="stage" class="stage">
+      <div id="lyricViewport" class="lyric-viewport">
+        <div id="lyricScroller" class="lyric-scroll">
+          <div id="line" class="line">Mineradio</div>
+        </div>
+      </div>
+      <div id="lockHint" class="lock-hint">
+        <span id="lockText">锁定中</span>
+        <button id="closeLyricsBtn" class="lyrics-close" type="button">关闭</button>
+      </div>
+    </div>
+  </div>
+  <script src="/js/desktop-lyrics.js"></script>
+</body>
+</html>

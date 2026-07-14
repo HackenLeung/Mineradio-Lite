@@ -1,0 +1,103 @@
+{
+  "enable": {
+    "ok": true,
+    "r": {
+      "ok": true
+    },
+    "hasSet": "function"
+  },
+  "before": [
+    {
+      "pid": 12324,
+      "name": "electron.exe",
+      "wsMB": 131.6,
+      "cmd": "d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe . --remote-debugging-port=9255 --remote-allow-origins=* \"--user-data-dir=d:\\projects\\Mineradio Lite\\verification\\userd"
+    },
+    {
+      "pid": 10884,
+      "name": "electron.exe",
+      "wsMB": 168.1,
+      "cmd": "\"d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe\" --type=gpu-process --enable-gpu-rasterization --use-angle=default --force_high_performance_gpu --user-data-dir=\"d:\\p"
+    },
+    {
+      "pid": 42880,
+      "name": "electron.exe",
+      "wsMB": 46.5,
+      "cmd": "\"d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe\" --type=utility --utility-sub-type=network.mojom.NetworkService --lang=zh-CN --service-sandbox-type=none --use-angle="
+    },
+    {
+      "pid": 40812,
+      "name": "electron.exe",
+      "wsMB": 174.8,
+      "cmd": "\"d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe\" --type=renderer --user-data-dir=\"d:\\projects\\Mineradio Lite\\verification\\userdata-original-lyrics-check\" --app-user-"
+    },
+    {
+      "pid": 13352,
+      "name": "electron.exe",
+      "wsMB": 88.2,
+      "cmd": "\"d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe\" --type=utility --utility-sub-type=audio.mojom.AudioService --lang=zh-CN --service-sandbox-type=audio --use-angle=def"
+    }
+  ],
+  "after": [
+    {
+      "pid": 12324,
+      "name": "electron.exe",
+      "wsMB": 133.8,
+      "cmd": "d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe . --remote-debugging-port=9255 --remote-allow-origins=* \"--user-data-dir=d:\\projects\\Mineradio Lite\\verification\\userd"
+    },
+    {
+      "pid": 10884,
+      "name": "electron.exe",
+      "wsMB": 192.5,
+      "cmd": "\"d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe\" --type=gpu-process --enable-gpu-rasterization --use-angle=default --force_high_performance_gpu --user-data-dir=\"d:\\p"
+    },
+    {
+      "pid": 42880,
+      "name": "electron.exe",
+      "wsMB": 46.5,
+      "cmd": "\"d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe\" --type=utility --utility-sub-type=network.mojom.NetworkService --lang=zh-CN --service-sandbox-type=none --use-angle="
+    },
+    {
+      "pid": 40812,
+      "name": "electron.exe",
+      "wsMB": 194.6,
+      "cmd": "\"d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe\" --type=renderer --user-data-dir=\"d:\\projects\\Mineradio Lite\\verification\\userdata-original-lyrics-check\" --app-user-"
+    },
+    {
+      "pid": 13352,
+      "name": "electron.exe",
+      "wsMB": 88.2,
+      "cmd": "\"d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe\" --type=utility --utility-sub-type=audio.mojom.AudioService --lang=zh-CN --service-sandbox-type=audio --use-angle=def"
+    },
+    {
+      "pid": 42288,
+      "name": "powershell.exe",
+      "wsMB": 71.1,
+      "cmd": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"\n$ErrorActionPreference = \\\"SilentlyContinue\\\"\nAdd-Type @\\\"\nusing System;\nusing System.Runtime.InteropServices;\npublic c"
+    },
+    {
+      "pid": 32904,
+      "name": "electron.exe",
+      "wsMB": 113.8,
+      "cmd": "\"d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe\" --type=renderer --user-data-dir=\"d:\\projects\\Mineradio Lite\\verification\\userdata-original-lyrics-check\" --app-user-"
+    },
+    {
+      "pid": 21764,
+      "name": "conhost.exe",
+      "wsMB": 7.9,
+      "cmd": "\\??\\C:\\Windows\\system32\\conhost.exe 0x4"
+    }
+  ],
+  "targets": [
+    {
+      "type": "page",
+      "url": "http://127.0.0.1:3001/desktop-lyrics.html",
+      "title": "Mineradio Desktop Lyrics"
+    },
+    {
+      "type": "page",
+      "url": "http://127.0.0.1:3001/",
+      "title": "Mineradio"
+    }
+  ]
+}

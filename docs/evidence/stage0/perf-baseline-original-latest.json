@@ -1,0 +1,742 @@
+{
+  "target": "original",
+  "appCwd": "d:\\projects\\Mineradio",
+  "userData": "D:\\projects\\Mineradio Lite\\verification\\userdata-original-clean",
+  "electronBinary": "d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe",
+  "startedAt": "2026-07-14T10:04:03.252Z",
+  "settleSec": 60,
+  "rounds": 3,
+  "driftSec": 600,
+  "enableLyrics": true,
+  "protocolNote": "冷启动静置 settleSec（默认 60）→ 3 轮进程树中位；可选 enable-lyrics + drift 秒暂停漂移。 本结果是阶段 0 占位壳/测试桩基线，不代表最终业务 UI 节省比例。",
+  "samples": [
+    {
+      "round": 1,
+      "at": "2026-07-14T10:05:07.940Z",
+      "tree": {
+        "rootPid": 36176,
+        "count": 5,
+        "totalWorkingSetMB": 613.9,
+        "pids": [
+          {
+            "pid": 36176,
+            "ppid": 42332,
+            "name": "electron.exe",
+            "wsMB": 116.4,
+            "cpuSec": 0.219,
+            "cmd": "d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe . --remote-debugging-port=9224 --remote-allow-origins=* \"--user-data-dir=D:\\projects\\Mineradio Lit"
+          },
+          {
+            "pid": 42544,
+            "ppid": 36176,
+            "name": "electron.exe",
+            "wsMB": 198.7,
+            "cpuSec": 5.438,
+            "cmd": "\"d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe\" --type=gpu-process --enable-gpu-rasterization --use-angle=default --force_high_performance_gpu -"
+          },
+          {
+            "pid": 42952,
+            "ppid": 36176,
+            "name": "electron.exe",
+            "wsMB": 45.9,
+            "cpuSec": 0.016,
+            "cmd": "\"d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe\" --type=utility --utility-sub-type=network.mojom.NetworkService --lang=zh-CN --service-sandbox-ty"
+          },
+          {
+            "pid": 42308,
+            "ppid": 36176,
+            "name": "electron.exe",
+            "wsMB": 164.1,
+            "cpuSec": 0.969,
+            "cmd": "\"d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe\" --type=renderer --user-data-dir=\"D:\\projects\\Mineradio Lite\\verification\\userdata-original-clean"
+          },
+          {
+            "pid": 7252,
+            "ppid": 36176,
+            "name": "electron.exe",
+            "wsMB": 88.8,
+            "cpuSec": 0,
+            "cmd": "\"d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe\" --type=utility --utility-sub-type=audio.mojom.AudioService --lang=zh-CN --service-sandbox-type=a"
+          }
+        ],
+        "powershellChildCount": 0,
+        "hasPowershellChild": false,
+        "powershell": []
+      }
+    },
+    {
+      "round": 2,
+      "at": "2026-07-14T10:05:12.428Z",
+      "tree": {
+        "rootPid": 36176,
+        "count": 5,
+        "totalWorkingSetMB": 613.9,
+        "pids": [
+          {
+            "pid": 36176,
+            "ppid": 42332,
+            "name": "electron.exe",
+            "wsMB": 116.4,
+            "cpuSec": 0.219,
+            "cmd": "d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe . --remote-debugging-port=9224 --remote-allow-origins=* \"--user-data-dir=D:\\projects\\Mineradio Lit"
+          },
+          {
+            "pid": 42544,
+            "ppid": 36176,
+            "name": "electron.exe",
+            "wsMB": 198.7,
+            "cpuSec": 5.438,
+            "cmd": "\"d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe\" --type=gpu-process --enable-gpu-rasterization --use-angle=default --force_high_performance_gpu -"
+          },
+          {
+            "pid": 42952,
+            "ppid": 36176,
+            "name": "electron.exe",
+            "wsMB": 45.9,
+            "cpuSec": 0.016,
+            "cmd": "\"d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe\" --type=utility --utility-sub-type=network.mojom.NetworkService --lang=zh-CN --service-sandbox-ty"
+          },
+          {
+            "pid": 42308,
+            "ppid": 36176,
+            "name": "electron.exe",
+            "wsMB": 164.1,
+            "cpuSec": 0.969,
+            "cmd": "\"d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe\" --type=renderer --user-data-dir=\"D:\\projects\\Mineradio Lite\\verification\\userdata-original-clean"
+          },
+          {
+            "pid": 7252,
+            "ppid": 36176,
+            "name": "electron.exe",
+            "wsMB": 88.8,
+            "cpuSec": 0,
+            "cmd": "\"d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe\" --type=utility --utility-sub-type=audio.mojom.AudioService --lang=zh-CN --service-sandbox-type=a"
+          }
+        ],
+        "powershellChildCount": 0,
+        "hasPowershellChild": false,
+        "powershell": []
+      }
+    },
+    {
+      "round": 3,
+      "at": "2026-07-14T10:05:16.913Z",
+      "tree": {
+        "rootPid": 36176,
+        "count": 5,
+        "totalWorkingSetMB": 613.8,
+        "pids": [
+          {
+            "pid": 36176,
+            "ppid": 42332,
+            "name": "electron.exe",
+            "wsMB": 116.4,
+            "cpuSec": 0.219,
+            "cmd": "d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe . --remote-debugging-port=9224 --remote-allow-origins=* \"--user-data-dir=D:\\projects\\Mineradio Lit"
+          },
+          {
+            "pid": 42544,
+            "ppid": 36176,
+            "name": "electron.exe",
+            "wsMB": 198.6,
+            "cpuSec": 5.438,
+            "cmd": "\"d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe\" --type=gpu-process --enable-gpu-rasterization --use-angle=default --force_high_performance_gpu -"
+          },
+          {
+            "pid": 42952,
+            "ppid": 36176,
+            "name": "electron.exe",
+            "wsMB": 45.9,
+            "cpuSec": 0.016,
+            "cmd": "\"d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe\" --type=utility --utility-sub-type=network.mojom.NetworkService --lang=zh-CN --service-sandbox-ty"
+          },
+          {
+            "pid": 42308,
+            "ppid": 36176,
+            "name": "electron.exe",
+            "wsMB": 164.1,
+            "cpuSec": 0.969,
+            "cmd": "\"d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe\" --type=renderer --user-data-dir=\"D:\\projects\\Mineradio Lite\\verification\\userdata-original-clean"
+          },
+          {
+            "pid": 7252,
+            "ppid": 36176,
+            "name": "electron.exe",
+            "wsMB": 88.8,
+            "cpuSec": 0,
+            "cmd": "\"d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe\" --type=utility --utility-sub-type=audio.mojom.AudioService --lang=zh-CN --service-sandbox-type=a"
+          }
+        ],
+        "powershellChildCount": 0,
+        "hasPowershellChild": false,
+        "powershell": []
+      }
+    }
+  ],
+  "drift": {
+    "seconds": 600,
+    "elapsedMs": 614278,
+    "startWorkingSetMB": 613.4,
+    "endWorkingSetMB": 583.1,
+    "deltaWorkingSetMB": -30.3,
+    "startHasPowershell": false,
+    "endHasPowershell": false,
+    "samples": [
+      {
+        "t": 0,
+        "totalWorkingSetMB": 613.4,
+        "count": 5,
+        "hasPowershell": false,
+        "pids": [
+          {
+            "pid": 36176,
+            "name": "electron.exe",
+            "wsMB": 116.4
+          },
+          {
+            "pid": 42544,
+            "name": "electron.exe",
+            "wsMB": 198.2
+          },
+          {
+            "pid": 42952,
+            "name": "electron.exe",
+            "wsMB": 45.9
+          },
+          {
+            "pid": 42308,
+            "name": "electron.exe",
+            "wsMB": 164.1
+          },
+          {
+            "pid": 7252,
+            "name": "electron.exe",
+            "wsMB": 88.8
+          }
+        ]
+      },
+      {
+        "t": 60,
+        "totalWorkingSetMB": 607.3,
+        "count": 5,
+        "hasPowershell": false,
+        "pids": [
+          {
+            "pid": 36176,
+            "name": "electron.exe",
+            "wsMB": 116.5
+          },
+          {
+            "pid": 42544,
+            "name": "electron.exe",
+            "wsMB": 193.7
+          },
+          {
+            "pid": 42952,
+            "name": "electron.exe",
+            "wsMB": 45.8
+          },
+          {
+            "pid": 42308,
+            "name": "electron.exe",
+            "wsMB": 162.5
+          },
+          {
+            "pid": 7252,
+            "name": "electron.exe",
+            "wsMB": 88.8
+          }
+        ]
+      },
+      {
+        "t": 120,
+        "totalWorkingSetMB": 595.9,
+        "count": 5,
+        "hasPowershell": false,
+        "pids": [
+          {
+            "pid": 36176,
+            "name": "electron.exe",
+            "wsMB": 116.5
+          },
+          {
+            "pid": 42544,
+            "name": "electron.exe",
+            "wsMB": 185.3
+          },
+          {
+            "pid": 42952,
+            "name": "electron.exe",
+            "wsMB": 45.8
+          },
+          {
+            "pid": 42308,
+            "name": "electron.exe",
+            "wsMB": 159.6
+          },
+          {
+            "pid": 7252,
+            "name": "electron.exe",
+            "wsMB": 88.7
+          }
+        ]
+      },
+      {
+        "t": 180,
+        "totalWorkingSetMB": 596,
+        "count": 5,
+        "hasPowershell": false,
+        "pids": [
+          {
+            "pid": 36176,
+            "name": "electron.exe",
+            "wsMB": 116.5
+          },
+          {
+            "pid": 42544,
+            "name": "electron.exe",
+            "wsMB": 185.3
+          },
+          {
+            "pid": 42952,
+            "name": "electron.exe",
+            "wsMB": 45.8
+          },
+          {
+            "pid": 42308,
+            "name": "electron.exe",
+            "wsMB": 159.7
+          },
+          {
+            "pid": 7252,
+            "name": "electron.exe",
+            "wsMB": 88.7
+          }
+        ]
+      },
+      {
+        "t": 240,
+        "totalWorkingSetMB": 596.4,
+        "count": 5,
+        "hasPowershell": false,
+        "pids": [
+          {
+            "pid": 36176,
+            "name": "electron.exe",
+            "wsMB": 116.7
+          },
+          {
+            "pid": 42544,
+            "name": "electron.exe",
+            "wsMB": 185.4
+          },
+          {
+            "pid": 42952,
+            "name": "electron.exe",
+            "wsMB": 45.8
+          },
+          {
+            "pid": 42308,
+            "name": "electron.exe",
+            "wsMB": 159.7
+          },
+          {
+            "pid": 7252,
+            "name": "electron.exe",
+            "wsMB": 88.8
+          }
+        ]
+      },
+      {
+        "t": 300,
+        "totalWorkingSetMB": 585.2,
+        "count": 5,
+        "hasPowershell": false,
+        "pids": [
+          {
+            "pid": 36176,
+            "name": "electron.exe",
+            "wsMB": 116.7
+          },
+          {
+            "pid": 42544,
+            "name": "electron.exe",
+            "wsMB": 184.3
+          },
+          {
+            "pid": 42952,
+            "name": "electron.exe",
+            "wsMB": 45.8
+          },
+          {
+            "pid": 42308,
+            "name": "electron.exe",
+            "wsMB": 149.6
+          },
+          {
+            "pid": 7252,
+            "name": "electron.exe",
+            "wsMB": 88.8
+          }
+        ]
+      },
+      {
+        "t": 360,
+        "totalWorkingSetMB": 585.1,
+        "count": 5,
+        "hasPowershell": false,
+        "pids": [
+          {
+            "pid": 36176,
+            "name": "electron.exe",
+            "wsMB": 116.7
+          },
+          {
+            "pid": 42544,
+            "name": "electron.exe",
+            "wsMB": 184.2
+          },
+          {
+            "pid": 42952,
+            "name": "electron.exe",
+            "wsMB": 45.8
+          },
+          {
+            "pid": 42308,
+            "name": "electron.exe",
+            "wsMB": 149.6
+          },
+          {
+            "pid": 7252,
+            "name": "electron.exe",
+            "wsMB": 88.8
+          }
+        ]
+      },
+      {
+        "t": 420,
+        "totalWorkingSetMB": 583.3,
+        "count": 5,
+        "hasPowershell": false,
+        "pids": [
+          {
+            "pid": 36176,
+            "name": "electron.exe",
+            "wsMB": 116.6
+          },
+          {
+            "pid": 42544,
+            "name": "electron.exe",
+            "wsMB": 182.5
+          },
+          {
+            "pid": 42952,
+            "name": "electron.exe",
+            "wsMB": 45.8
+          },
+          {
+            "pid": 42308,
+            "name": "electron.exe",
+            "wsMB": 149.6
+          },
+          {
+            "pid": 7252,
+            "name": "electron.exe",
+            "wsMB": 88.8
+          }
+        ]
+      },
+      {
+        "t": 480,
+        "totalWorkingSetMB": 583.3,
+        "count": 5,
+        "hasPowershell": false,
+        "pids": [
+          {
+            "pid": 36176,
+            "name": "electron.exe",
+            "wsMB": 116.6
+          },
+          {
+            "pid": 42544,
+            "name": "electron.exe",
+            "wsMB": 182.5
+          },
+          {
+            "pid": 42952,
+            "name": "electron.exe",
+            "wsMB": 45.8
+          },
+          {
+            "pid": 42308,
+            "name": "electron.exe",
+            "wsMB": 149.6
+          },
+          {
+            "pid": 7252,
+            "name": "electron.exe",
+            "wsMB": 88.8
+          }
+        ]
+      },
+      {
+        "t": 540,
+        "totalWorkingSetMB": 583.5,
+        "count": 5,
+        "hasPowershell": false,
+        "pids": [
+          {
+            "pid": 36176,
+            "name": "electron.exe",
+            "wsMB": 116.7
+          },
+          {
+            "pid": 42544,
+            "name": "electron.exe",
+            "wsMB": 182.5
+          },
+          {
+            "pid": 42952,
+            "name": "electron.exe",
+            "wsMB": 45.9
+          },
+          {
+            "pid": 42308,
+            "name": "electron.exe",
+            "wsMB": 149.6
+          },
+          {
+            "pid": 7252,
+            "name": "electron.exe",
+            "wsMB": 88.8
+          }
+        ]
+      },
+      {
+        "t": 600,
+        "totalWorkingSetMB": 583.1,
+        "count": 5,
+        "hasPowershell": false,
+        "pids": [
+          {
+            "pid": 36176,
+            "name": "electron.exe",
+            "wsMB": 116.7
+          },
+          {
+            "pid": 42544,
+            "name": "electron.exe",
+            "wsMB": 182.5
+          },
+          {
+            "pid": 42952,
+            "name": "electron.exe",
+            "wsMB": 45.9
+          },
+          {
+            "pid": 42308,
+            "name": "electron.exe",
+            "wsMB": 149.2
+          },
+          {
+            "pid": 7252,
+            "name": "electron.exe",
+            "wsMB": 88.8
+          }
+        ]
+      }
+    ],
+    "startRaf60s": null,
+    "endRaf60s": null,
+    "endPerfProbe": null
+  },
+  "perfProbe": null,
+  "pageCanvasProbe": {
+    "title": "Mineradio",
+    "url": "http://127.0.0.1:3001/",
+    "canvasElements": 6,
+    "gsapTicker": true,
+    "memory": {
+      "usedJSHeapSize": 10728189,
+      "totalJSHeapSize": 11556069,
+      "jsHeapSizeLimit": 4294967296
+    }
+  },
+  "cdpMetrics": [
+    {
+      "name": "Timestamp",
+      "value": 16597.072436
+    },
+    {
+      "name": "AudioHandlers",
+      "value": 1
+    },
+    {
+      "name": "AudioWorkletProcessors",
+      "value": 0
+    },
+    {
+      "name": "Documents",
+      "value": 4
+    },
+    {
+      "name": "Frames",
+      "value": 4
+    },
+    {
+      "name": "JSEventListeners",
+      "value": 667
+    },
+    {
+      "name": "LayoutObjects",
+      "value": 549
+    },
+    {
+      "name": "MediaKeySessions",
+      "value": 0
+    },
+    {
+      "name": "MediaKeys",
+      "value": 0
+    },
+    {
+      "name": "Nodes",
+      "value": 3487
+    },
+    {
+      "name": "Resources",
+      "value": 127
+    },
+    {
+      "name": "ContextLifecycleStateObservers",
+      "value": 11
+    },
+    {
+      "name": "V8PerContextDatas",
+      "value": 2
+    },
+    {
+      "name": "WorkerGlobalScopes",
+      "value": 0
+    },
+    {
+      "name": "UACSSResources",
+      "value": 0
+    },
+    {
+      "name": "RTCPeerConnections",
+      "value": 0
+    },
+    {
+      "name": "ResourceFetchers",
+      "value": 4
+    },
+    {
+      "name": "AdSubframes",
+      "value": 0
+    },
+    {
+      "name": "DetachedScriptStates",
+      "value": 0
+    },
+    {
+      "name": "ArrayBufferContents",
+      "value": 76
+    },
+    {
+      "name": "LayoutCount",
+      "value": 3402
+    },
+    {
+      "name": "RecalcStyleCount",
+      "value": 3451
+    },
+    {
+      "name": "LayoutDuration",
+      "value": 0.400352
+    },
+    {
+      "name": "RecalcStyleDuration",
+      "value": 0.801593
+    },
+    {
+      "name": "DevToolsCommandDuration",
+      "value": 0.000506
+    },
+    {
+      "name": "ScriptDuration",
+      "value": 4.52017
+    },
+    {
+      "name": "V8CompileDuration",
+      "value": 0.011422
+    },
+    {
+      "name": "TaskDuration",
+      "value": 8.011685
+    },
+    {
+      "name": "TaskOtherDuration",
+      "value": 2.277642
+    },
+    {
+      "name": "ThreadTime",
+      "value": 3.912828
+    },
+    {
+      "name": "ProcessTime",
+      "value": 7.263238
+    },
+    {
+      "name": "JSHeapUsedSize",
+      "value": 6513164
+    },
+    {
+      "name": "JSHeapTotalSize",
+      "value": 7340032
+    },
+    {
+      "name": "FirstMeaningfulPaint",
+      "value": 16535.070101
+    },
+    {
+      "name": "DomContentLoaded",
+      "value": 16537.064029
+    },
+    {
+      "name": "NavigationStart",
+      "value": 16534.311725
+    }
+  ],
+  "summary": {
+    "label": "stage0-placeholder-shell-baseline",
+    "disclaimer": "Lite 尚无完整业务 UI/播放器；此数字是阶段 0 占位壳+桌面歌词测试桩 基线，不得宣传为最终节省比例。",
+    "settleSec": 60,
+    "totalWorkingSetMB_median": 613.9,
+    "totalWorkingSetMB_rounds": [
+      613.9,
+      613.9,
+      613.8
+    ],
+    "anyPowershellChild": false,
+    "hasPerfProbe": false,
+    "webglTotalFromProbe": null,
+    "rafRecent60s": null,
+    "rafScheduledTotal": null,
+    "residentTimers": null,
+    "canvasElementsInDom": 6,
+    "gsapTicker": true,
+    "jsHeapUsedMB": 10.2,
+    "driftDeltaMB": -30.3,
+    "driftHasPowershell": false
+  },
+  "lyricsEnable": {
+    "ok": true,
+    "r": {
+      "ok": true
+    }
+  },
+  "finishedAt": "2026-07-14T10:15:32.698Z",
+  "childOutTail": "t show up\r\nonce the app is packaged.\", source: node:electron/js2c/renderer_init (2)\r\n[36176:0714/180403.879:INFO:CONSOLE:2100] \"The keyword 'slider-vertical' specified to an 'appearance' property is not standardized. It will be removed in the future. Use <input type=range style=\"writing-mode: vertical-lr; direction: rtl\"> instead.\", source: http://127.0.0.1:3001/ (2100)\r\n[36176:0714/180403.995:INFO:CONSOLE:3198] \"[MineradioPerf] script-start 357ms\", source: http://127.0.0.1:3001/ (3198)\r\n[36176:0714/180404.503:INFO:CONSOLE:7460] \"v7 shell loaded, JS pending\", source: http://127.0.0.1:3001/ (7460)\r\n[36176:0714/180406.378:INFO:CONSOLE:3208] \"[MineradioPerf] longtask 345ms 2395ms\", source: http://127.0.0.1:3001/ (3208)\r\n[36176:0714/180406.383:INFO:CONSOLE:3198] \"[MineradioPerf] dom-content-loaded 2752ms\", source: http://127.0.0.1:3001/ (3198)\r\n[36176:0714/180406.473:INFO:CONSOLE:2] \"Uncaught (in promise) TypeError: Failed to construct 'URL': Invalid URL\", source: node:electron/js2c/renderer_init (2)\r\n[36176:0714/180411.427:INFO:CONSOLE:3198] \"[MineradioPerf] splash-ready 7796ms\", source: http://127.0.0.1:3001/ (3198)\r\n[36176:0714/180412.407:INFO:CONSOLE:3198] \"[MineradioPerf] splash-dismiss 8777ms\", source: http://127.0.0.1:3001/ (3198)\r\n[36176:0714/180413.591:INFO:CONSOLE:3198] \"[MineradioPerf] home-revealed 9960ms\", source: http://127.0.0.1:3001/ (3198)\r\n[36176:0714/180415.898:INFO:CONSOLE:3208] \"[MineradioPerf] longtask 10598ms 1668ms\", source: http://127.0.0.1:3001/ (3208)\r\n",
+  "ok": true
+}

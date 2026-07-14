@@ -1,0 +1,92 @@
+{
+  "name": "mineradio-lite",
+  "productName": "Mineradio Lite",
+  "version": "0.1.0",
+  "description": "Windows 沉浸式音乐播放器（Lite）：多平台搜索、本地音乐库、纯 DOM 歌词舞台，优先降低运行时占用。",
+  "author": "Mineradio Lite",
+  "main": "desktop/main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dev:server": "cross-env HOST=127.0.0.1 node server.js",
+    "verify:gui": "node scripts/gui-verify.js",
+    "verify:perf": "node scripts/perf-baseline.js",
+    "build:win": "electron-builder --win nsis",
+    "build:win:dir": "electron-builder --win dir"
+  },
+  "build": {
+    "appId": "com.mineradio.lite",
+    "productName": "Mineradio Lite",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "afterPack": "build/after-pack.js",
+    "toolsets": {
+      "winCodeSign": "1.1.0"
+    },
+    "files": [
+      "desktop/**/*",
+      "public/**/*",
+      "build/**/*",
+      "server.js",
+      "dj-analyzer.js",
+      "platform-playlist-import.js",
+      "package.json",
+      "!public/index.*.html",
+      "public/index.html"
+    ],
+    "asar": false,
+    "win": {
+      "executableName": "Mineradio Lite",
+      "icon": "build/icon.ico",
+      "signAndEditExecutable": false,
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Mineradio Lite",
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerSidebar": "build/installerSidebar.bmp",
+      "uninstallerSidebar": "build/installerSidebar.bmp",
+      "installerHeader": "build/installerHeader.bmp",
+      "include": "build/installer.nsh",
+      "artifactName": "Mineradio-Lite-${version}-Setup.${ext}"
+    }
+  },
+  "mineradio": {
+    "update": {
+      "provider": "none",
+      "owner": "",
+      "repo": "",
+      "preview": false,
+      "preferMirrors": false,
+      "mirrors": [],
+      "note": "Lite 仓库/发布通道未确定前禁用自动更新，不得连接原版 HackenLeung/Mineradio。"
+    }
+  },
+  "dependencies": {
+    "@neteasecloudmusicapienhanced/api": "^4.36.1",
+    "mpg123-decoder": "^1.0.3",
+    "NeteaseCloudMusicApi": "^4.32.0",
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "electron": "^42.4.1",
+    "electron-builder": "^26.15.3",
+    "rcedit": "^5.0.2"
+  }
+}

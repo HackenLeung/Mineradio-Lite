@@ -1,0 +1,360 @@
+{
+  "target": "original",
+  "appCwd": "d:\\projects\\Mineradio",
+  "userData": "D:\\projects\\Mineradio Lite\\verification\\userdata-original-clean",
+  "electronBinary": "d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe",
+  "startedAt": "2026-07-14T09:45:12.156Z",
+  "settleSec": 60,
+  "rounds": 3,
+  "driftSec": 0,
+  "enableLyrics": false,
+  "protocolNote": "冷启动静置 settleSec（默认 60）→ 3 轮进程树中位；可选 enable-lyrics + drift 秒暂停漂移。 本结果是阶段 0 占位壳/测试桩基线，不代表最终业务 UI 节省比例。",
+  "samples": [
+    {
+      "round": 1,
+      "at": "2026-07-14T09:46:14.255Z",
+      "tree": {
+        "rootPid": 36264,
+        "count": 5,
+        "totalWorkingSetMB": 751.7,
+        "pids": [
+          {
+            "pid": 36264,
+            "ppid": 4092,
+            "name": "electron.exe",
+            "wsMB": 125,
+            "cpuSec": 0.266,
+            "cmd": "d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe . --remote-debugging-port=9224 --remote-allow-origins=* \"--user-data-dir=D:\\projects\\Mineradio Lit"
+          },
+          {
+            "pid": 16068,
+            "ppid": 36264,
+            "name": "electron.exe",
+            "wsMB": 265.4,
+            "cpuSec": 9.078,
+            "cmd": "\"d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe\" --type=gpu-process --enable-gpu-rasterization --use-angle=default --force_high_performance_gpu -"
+          },
+          {
+            "pid": 11252,
+            "ppid": 36264,
+            "name": "electron.exe",
+            "wsMB": 46.6,
+            "cpuSec": 0.031,
+            "cmd": "\"d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe\" --type=utility --utility-sub-type=network.mojom.NetworkService --lang=zh-CN --service-sandbox-ty"
+          },
+          {
+            "pid": 37272,
+            "ppid": 36264,
+            "name": "electron.exe",
+            "wsMB": 226.1,
+            "cpuSec": 4.062,
+            "cmd": "\"d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe\" --type=renderer --user-data-dir=\"D:\\projects\\Mineradio Lite\\verification\\userdata-original-clean"
+          },
+          {
+            "pid": 39252,
+            "ppid": 36264,
+            "name": "electron.exe",
+            "wsMB": 88.6,
+            "cpuSec": 0,
+            "cmd": "\"d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe\" --type=utility --utility-sub-type=audio.mojom.AudioService --lang=zh-CN --service-sandbox-type=a"
+          }
+        ],
+        "powershellChildCount": 0,
+        "hasPowershellChild": false,
+        "powershell": []
+      }
+    },
+    {
+      "round": 2,
+      "at": "2026-07-14T09:46:18.849Z",
+      "tree": {
+        "rootPid": 36264,
+        "count": 5,
+        "totalWorkingSetMB": 744.3,
+        "pids": [
+          {
+            "pid": 36264,
+            "ppid": 4092,
+            "name": "electron.exe",
+            "wsMB": 125,
+            "cpuSec": 0.297,
+            "cmd": "d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe . --remote-debugging-port=9224 --remote-allow-origins=* \"--user-data-dir=D:\\projects\\Mineradio Lit"
+          },
+          {
+            "pid": 16068,
+            "ppid": 36264,
+            "name": "electron.exe",
+            "wsMB": 261.5,
+            "cpuSec": 9.406,
+            "cmd": "\"d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe\" --type=gpu-process --enable-gpu-rasterization --use-angle=default --force_high_performance_gpu -"
+          },
+          {
+            "pid": 11252,
+            "ppid": 36264,
+            "name": "electron.exe",
+            "wsMB": 46.5,
+            "cpuSec": 0.031,
+            "cmd": "\"d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe\" --type=utility --utility-sub-type=network.mojom.NetworkService --lang=zh-CN --service-sandbox-ty"
+          },
+          {
+            "pid": 37272,
+            "ppid": 36264,
+            "name": "electron.exe",
+            "wsMB": 222.7,
+            "cpuSec": 4.328,
+            "cmd": "\"d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe\" --type=renderer --user-data-dir=\"D:\\projects\\Mineradio Lite\\verification\\userdata-original-clean"
+          },
+          {
+            "pid": 39252,
+            "ppid": 36264,
+            "name": "electron.exe",
+            "wsMB": 88.6,
+            "cpuSec": 0,
+            "cmd": "\"d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe\" --type=utility --utility-sub-type=audio.mojom.AudioService --lang=zh-CN --service-sandbox-type=a"
+          }
+        ],
+        "powershellChildCount": 0,
+        "hasPowershellChild": false,
+        "powershell": []
+      }
+    },
+    {
+      "round": 3,
+      "at": "2026-07-14T09:46:23.387Z",
+      "tree": {
+        "rootPid": 36264,
+        "count": 5,
+        "totalWorkingSetMB": 741.2,
+        "pids": [
+          {
+            "pid": 36264,
+            "ppid": 4092,
+            "name": "electron.exe",
+            "wsMB": 125.1,
+            "cpuSec": 0.375,
+            "cmd": "d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe . --remote-debugging-port=9224 --remote-allow-origins=* \"--user-data-dir=D:\\projects\\Mineradio Lit"
+          },
+          {
+            "pid": 16068,
+            "ppid": 36264,
+            "name": "electron.exe",
+            "wsMB": 258.8,
+            "cpuSec": 9.734,
+            "cmd": "\"d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe\" --type=gpu-process --enable-gpu-rasterization --use-angle=default --force_high_performance_gpu -"
+          },
+          {
+            "pid": 11252,
+            "ppid": 36264,
+            "name": "electron.exe",
+            "wsMB": 46.6,
+            "cpuSec": 0.031,
+            "cmd": "\"d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe\" --type=utility --utility-sub-type=network.mojom.NetworkService --lang=zh-CN --service-sandbox-ty"
+          },
+          {
+            "pid": 37272,
+            "ppid": 36264,
+            "name": "electron.exe",
+            "wsMB": 222.1,
+            "cpuSec": 4.594,
+            "cmd": "\"d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe\" --type=renderer --user-data-dir=\"D:\\projects\\Mineradio Lite\\verification\\userdata-original-clean"
+          },
+          {
+            "pid": 39252,
+            "ppid": 36264,
+            "name": "electron.exe",
+            "wsMB": 88.6,
+            "cpuSec": 0,
+            "cmd": "\"d:\\projects\\Mineradio\\node_modules\\electron\\dist\\electron.exe\" --type=utility --utility-sub-type=audio.mojom.AudioService --lang=zh-CN --service-sandbox-type=a"
+          }
+        ],
+        "powershellChildCount": 0,
+        "hasPowershellChild": false,
+        "powershell": []
+      }
+    }
+  ],
+  "drift": null,
+  "perfProbe": null,
+  "pageCanvasProbe": {
+    "title": "Mineradio",
+    "url": "http://127.0.0.1:3001/",
+    "canvasElements": 6,
+    "gsapTicker": true,
+    "memory": {
+      "usedJSHeapSize": 12740232,
+      "totalJSHeapSize": 21257056,
+      "jsHeapSizeLimit": 4294967296
+    }
+  },
+  "cdpMetrics": [
+    {
+      "name": "Timestamp",
+      "value": 15463.343414
+    },
+    {
+      "name": "AudioHandlers",
+      "value": 14
+    },
+    {
+      "name": "AudioWorkletProcessors",
+      "value": 0
+    },
+    {
+      "name": "Documents",
+      "value": 4
+    },
+    {
+      "name": "Frames",
+      "value": 4
+    },
+    {
+      "name": "JSEventListeners",
+      "value": 812
+    },
+    {
+      "name": "LayoutObjects",
+      "value": 552
+    },
+    {
+      "name": "MediaKeySessions",
+      "value": 0
+    },
+    {
+      "name": "MediaKeys",
+      "value": 0
+    },
+    {
+      "name": "Nodes",
+      "value": 4183
+    },
+    {
+      "name": "Resources",
+      "value": 148
+    },
+    {
+      "name": "ContextLifecycleStateObservers",
+      "value": 13
+    },
+    {
+      "name": "V8PerContextDatas",
+      "value": 2
+    },
+    {
+      "name": "WorkerGlobalScopes",
+      "value": 0
+    },
+    {
+      "name": "UACSSResources",
+      "value": 0
+    },
+    {
+      "name": "RTCPeerConnections",
+      "value": 0
+    },
+    {
+      "name": "ResourceFetchers",
+      "value": 4
+    },
+    {
+      "name": "AdSubframes",
+      "value": 0
+    },
+    {
+      "name": "DetachedScriptStates",
+      "value": 0
+    },
+    {
+      "name": "ArrayBufferContents",
+      "value": 84
+    },
+    {
+      "name": "LayoutCount",
+      "value": 10151
+    },
+    {
+      "name": "RecalcStyleCount",
+      "value": 10340
+    },
+    {
+      "name": "LayoutDuration",
+      "value": 0.881147
+    },
+    {
+      "name": "RecalcStyleDuration",
+      "value": 1.822838
+    },
+    {
+      "name": "DevToolsCommandDuration",
+      "value": 0.000416
+    },
+    {
+      "name": "ScriptDuration",
+      "value": 5.42813
+    },
+    {
+      "name": "V8CompileDuration",
+      "value": 0.011673
+    },
+    {
+      "name": "TaskDuration",
+      "value": 14.782425
+    },
+    {
+      "name": "TaskOtherDuration",
+      "value": 6.638221
+    },
+    {
+      "name": "ThreadTime",
+      "value": 10.523035
+    },
+    {
+      "name": "ProcessTime",
+      "value": 18.737541
+    },
+    {
+      "name": "JSHeapUsedSize",
+      "value": 8524032
+    },
+    {
+      "name": "JSHeapTotalSize",
+      "value": 17039360
+    },
+    {
+      "name": "FirstMeaningfulPaint",
+      "value": 15403.986411
+    },
+    {
+      "name": "DomContentLoaded",
+      "value": 15405.823847
+    },
+    {
+      "name": "NavigationStart",
+      "value": 15403.235588
+    }
+  ],
+  "summary": {
+    "label": "stage0-placeholder-shell-baseline",
+    "disclaimer": "Lite 尚无完整业务 UI/播放器；此数字是阶段 0 占位壳 基线，不得宣传为最终节省比例。",
+    "settleSec": 60,
+    "totalWorkingSetMB_median": 744.3,
+    "totalWorkingSetMB_rounds": [
+      751.7,
+      744.3,
+      741.2
+    ],
+    "anyPowershellChild": false,
+    "hasPerfProbe": false,
+    "webglTotalFromProbe": null,
+    "rafRecent60s": null,
+    "rafScheduledTotal": null,
+    "residentTimers": null,
+    "canvasElementsInDom": 6,
+    "gsapTicker": true,
+    "jsHeapUsedMB": 12.2,
+    "driftDeltaMB": null,
+    "driftHasPowershell": null
+  },
+  "finishedAt": "2026-07-14T09:46:23.387Z",
+  "childOutTail": "CONSOLE:3198] \"[MineradioPerf] script-start 342ms\", source: http://127.0.0.1:3001/ (3198)\r\n[36264:0714/174513.312:INFO:CONSOLE:7460] \"v7 shell loaded, JS pending\", source: http://127.0.0.1:3001/ (7460)\r\n[36264:0714/174515.139:INFO:CONSOLE:3208] \"[MineradioPerf] longtask 330ms 2248ms\", source: http://127.0.0.1:3001/ (3208)\r\n[36264:0714/174515.143:INFO:CONSOLE:3198] \"[MineradioPerf] dom-content-loaded 2588ms\", source: http://127.0.0.1:3001/ (3198)\r\n[36264:0714/174515.230:INFO:CONSOLE:2] \"Uncaught (in promise) TypeError: Failed to construct 'URL': Invalid URL\", source: node:electron/js2c/renderer_init (2)\r\n[36264:0714/174520.184:INFO:CONSOLE:3198] \"[MineradioPerf] splash-ready 7630ms\", source: http://127.0.0.1:3001/ (3198)\r\n[36264:0714/174521.121:INFO:CONSOLE:3198] \"[MineradioPerf] splash-dismiss 8566ms\", source: http://127.0.0.1:3001/ (3198)\r\n[36264:0714/174522.306:INFO:CONSOLE:3198] \"[MineradioPerf] home-revealed 9752ms\", source: http://127.0.0.1:3001/ (3198)\r\n[36264:0714/174524.647:INFO:CONSOLE:3208] \"[MineradioPerf] longtask 10452ms 1638ms\", source: http://127.0.0.1:3001/ (3208)\r\n[Search] xiao'gou limit: 18\n[Search] xiao limit: 18\n[Search] xiao'ban limit: 18\n[Search] 小半 limit: 18\n[Search] 小半 limit: 18\n[SongUrl] id: 421423806 logged-in: false\n[SongUrl] hires -> OK (TRIAL)\n[SongUrl] lossless -> OK (TRIAL)\n[SongUrl] exhigh -> OK (TRIAL)\n[SongUrl] standard -> OK (TRIAL)\n[36264:0714/174556.048:INFO:CONSOLE:22108] \"beatmap D盘缓存命中: 382 个鼓点\", source: http://127.0.0.1:3001/ (22108)\r\n",
+  "ok": true
+}

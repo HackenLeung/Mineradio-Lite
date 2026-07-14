@@ -92,7 +92,11 @@
 - 外部数据（歌名 / 歌词 / 评论 / 歌单名 / 用户昵称）直接拼 `innerHTML` —— 一律 `textContent`；确需生成 HTML 时统一转义（提供单一 `escapeHtml` 工具，禁止散拼）
 - 裸 `node server.js` 调试（默认绑 `0.0.0.0`）—— Windows PowerShell 须两行强制回环：`$env:HOST='127.0.0.1'` 后 `node server.js`（**不用**类 Unix 的 `HOST=127.0.0.1 node server.js`）；npm script 用 `cross-env HOST=127.0.0.1 node server.js`
 - 主窗口导航到任意外部页面；外链未经 `shell.openExternal` 且未校验 `http:/https:` scheme
-- IPC handler 不校验 `event.sender` 来源
+- IPC handler 不校验来源。**校验方式硬约束**：
+  - 校验 `event.senderFrame`，**不使用** `event.sender.getURL()`（后者取 webContents 顶层 URL，非实际发起 IPC 的 frame）。
+  - `senderFrame` 必须存在，且必须 **`=== event.sender.mainFrame`**（拒绝子 frame / iframe 发起的 IPC）。
+  - 用 `new URL(senderFrame.url).origin` 与本地应用 origin（`http://127.0.0.1:<mainServerPort>`）**严格相等**比较；**禁止 `startsWith`** 做来源判断（`http://127.0.0.1:3000.evil.com` 会绕过）。
+  - **按窗口设置 channel allowlist**：`mainWindow` 允许主应用所需的全部 handler；`desktopLyricsWindow` **只能**调用必要的少数 `mineradio-desktop-lyrics-*` channel（当前：`set-dragging`/`set-pointer-capture`/`set-hot-bounds`/`set-lock-state`/`move-by`/`set-enabled`），**不得**调用登录、文件导入导出、下载目录、更新安装、重启、窗口控制等主窗口 IPC；其他窗口与未列 channel 一律拒绝。
 - 关闭已有的导航拦截（`setWindowOpenHandler` deny + 外链转系统浏览器，main.js:1716-1719 保留）
 
 ## 7. 安全待评估项（阶段 0 记录，阶段 5 前给结论）

@@ -40,7 +40,10 @@ yarn-error.log*
 output/
 tmp/
 *.png.tmp
+# 临时采样/机器本地噪声可忽略；最终验收证据放 docs/evidence/stage0/ 并受 Git 跟踪
 verification/
+!docs/evidence/
+!docs/evidence/**
 screenshots/
 
 # Claude local session state (keep project memory/config out of history)

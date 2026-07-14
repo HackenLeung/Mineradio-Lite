@@ -1,0 +1,39 @@
+{
+  "enable": {
+    "ok": true
+  },
+  "after": [
+    {
+      "pid": 38944,
+      "name": "electron.exe",
+      "wsMB": 130,
+      "cmd": "\"D:\\projects\\Mineradio Lite\\node_modules\\electron\\dist\\electron.exe\" . --remote-debugging-port=9256 --remote-allow-origins=*"
+    },
+    {
+      "pid": 15760,
+      "name": "electron.exe",
+      "wsMB": 93,
+      "cmd": "\"D:\\projects\\Mineradio Lite\\node_modules\\electron\\dist\\electron.exe\" --type=gpu-process --user-data-dir=\"D:\\projects\\Mineradio Lite\\verification\\userdata-lite-lyrics-check\" --gpu-p"
+    },
+    {
+      "pid": 29160,
+      "name": "electron.exe",
+      "wsMB": 44.8,
+      "cmd": "\"D:\\projects\\Mineradio Lite\\node_modules\\electron\\dist\\electron.exe\" --type=utility --utility-sub-type=network.mojom.NetworkService --lang=zh-CN --service-sandbox-type=none --user-"
+    },
+    {
+      "pid": 39416,
+      "name": "electron.exe",
+      "wsMB": 99.9,
+      "cmd": "\"D:\\projects\\Mineradio Lite\\node_modules\\electron\\dist\\electron.exe\" --type=renderer --user-data-dir=\"D:\\projects\\Mineradio Lite\\verification\\userdata-lite-lyrics-check\" --app-user"
+    },
+    {
+      "pid": 31992,
+      "name": "electron.exe",
+      "wsMB": 99.3,
+      "cmd": "\"D:\\projects\\Mineradio Lite\\node_modules\\electron\\dist\\electron.exe\" --type=renderer --user-data-dir=\"D:\\projects\\Mineradio Lite\\verification\\userdata-lite-lyrics-check\" --app-user"
+    }
+  ],
+  "hasPowershell": false,
+  "totalWsMB": 467
+}

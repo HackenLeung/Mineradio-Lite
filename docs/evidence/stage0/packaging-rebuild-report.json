@@ -1,0 +1,58 @@
+{
+  "builtAt": "2026-07-14T10:36:12.334Z",
+  "targets": {
+    "dirExe": "dist/win-unpacked/Mineradio Lite.exe",
+    "nsis": "dist/Mineradio-Lite-0.1.0-Setup.exe",
+    "exeBytes": 232690176,
+    "nsisBytes": 126662962
+  },
+  "packagedPackageJson": {
+    "name": "mineradio-lite",
+    "productName": "Mineradio Lite",
+    "version": "0.1.0",
+    "update": {
+      "provider": "none",
+      "owner": "",
+      "repo": "",
+      "preview": false,
+      "preferMirrors": false,
+      "mirrors": [],
+      "note": "Lite 仓库/发布通道未确定前禁用自动更新，不得连接原版 HackenLeung/Mineradio。"
+    },
+    "hasBuildField": false,
+    "note": "electron-builder 打包后 package.json 通常不含 build.appId；appId 以 installer.nsh / main.js 常量为准"
+  },
+  "mainJsIdentity": {
+    "APP_NAME": true,
+    "APP_USER_MODEL_ID": true,
+    "APP_USER_DATA_DIR": true,
+    "setUserData": true
+  },
+  "installerNsh": {
+    "marker": true,
+    "appId": true,
+    "installDirLite": true,
+    "noOriginalDesktopAppId": true
+  },
+  "residue": {
+    "badPublicFiles": [],
+    "publicFiles": [
+      "css/desktop-lyrics.css",
+      "css/placeholder.css",
+      "desktop-lyrics.html",
+      "index.html",
+      "js/desktop-lyrics.js",
+      "js/perf-probe.js",
+      "js/placeholder.js"
+    ],
+    "functionalPollerOrGpuInMain": false
+  },
+  "updateChannel": {
+    "provider": "none",
+    "owner": "",
+    "repo": "",
+    "disabled": true,
+    "appUpdateYmlPresent": false
+  },
+  "ok": true
+}

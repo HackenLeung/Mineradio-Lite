@@ -1,0 +1,128 @@
+{
+  "startedAt": "2026-07-14T09:42:27.209Z",
+  "appIdentity": {
+    "expectedProductName": "Mineradio Lite",
+    "expectedAppId": "com.mineradio.lite",
+    "userData": "D:\\projects\\Mineradio Lite\\verification\\userdata-lite-clean"
+  },
+  "consoleErrors": [],
+  "consoleWarnings": [],
+  "versionCard": {
+    "text": "name\nmineradio-lite\nproductName\nMineradio Lite\nversion\n0.1.0\nupdate\n未配置",
+    "hasError": false
+  },
+  "discoverCard": {
+    "text": "登录态：未登录（引导登录）\n\nmode：starter\n\n计数：dailySongs=0 · playlists=0 · podcasts=0",
+    "hasError": false
+  },
+  "perfSnapshot": {
+    "ts": 1784022150745,
+    "canvas": {
+      "contexts": {
+        "webgl": 0,
+        "webgl2": 0,
+        "experimental-webgl": 0,
+        "2d": 0,
+        "other": 0
+      },
+      "contextStacks": {},
+      "offscreenConstructed": 0,
+      "offscreenStacks": {},
+      "createElementCanvas": 0,
+      "webglTotal": 0
+    },
+    "raf": {
+      "scheduledTotal": 0,
+      "cancelTotal": 0,
+      "recent60sSchedules": 0,
+      "lastCallbackTs": 0,
+      "callbackCount": 0,
+      "byStack": {}
+    },
+    "timers": {
+      "activeCount": 0,
+      "resident": [],
+      "recursiveStacks": {}
+    },
+    "gsap": {
+      "tickerPresent": false
+    }
+  },
+  "lyrics": {
+    "ok": true,
+    "note": "IPC-only; tray menu human click is separate acceptance item",
+    "steps": [
+      {
+        "step": "enable",
+        "result": {
+          "ok": true
+        }
+      },
+      {
+        "step": "lock",
+        "result": {
+          "ok": true,
+          "locked": true
+        }
+      },
+      {
+        "step": "unlock",
+        "result": {
+          "ok": true,
+          "locked": false
+        }
+      },
+      {
+        "step": "relock",
+        "result": {
+          "ok": true,
+          "locked": true
+        }
+      },
+      {
+        "step": "finalUnlock",
+        "result": {
+          "ok": true,
+          "locked": false
+        }
+      }
+    ],
+    "lockShapeOk": true,
+    "windowProbe": {
+      "probe": {
+        "enabled": true,
+        "playing": false,
+        "locked": false,
+        "text": "阶段0验证歌词",
+        "rafActive": false,
+        "hasCanvas": false
+      },
+      "hasCanvas": false,
+      "bodyClass": "show paused unlocked",
+      "lineText": "阶段0验证歌词",
+      "title": "Mineradio Lite Desktop Lyrics (Stage0 Stub)"
+    }
+  },
+  "ok": true,
+  "notes": [
+    "托盘菜单人工点击不在本脚本范围；IPC setDesktopLyricsLock 仅验证共享函数与返回形状。",
+    "desktop-lyrics.* 为阶段 0 测试桩，不代表阶段 3 完成。",
+    "title=Mineradio Lite — 阶段 0",
+    "desktopWindow=true"
+  ],
+  "checks": {
+    "versionOk": true,
+    "discoverOk": true,
+    "discoverIsStarter": true,
+    "perfOk": true,
+    "consoleOk": true,
+    "noFrameAncestorsWarning": true,
+    "lyricsIpcOk": true,
+    "lyricsStubLabeled": true,
+    "consoleErrorCount": 0,
+    "consoleWarningCount": 0,
+    "trayHumanClick": "PENDING_HUMAN"
+  },
+  "finishedAt": "2026-07-14T09:42:32.596Z",
+  "childOutTail": "\r\n\r\nDevTools listening on ws://127.0.0.1:9223/devtools/browser/28814706-98cf-4a4a-bea5-7c54d4c021cd\r\n◇ injected env (0) from .env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }\n======================================================\n 粒子音乐可视化 v2  →  http://localhost:3001\n 登录态: 未登录\n======================================================\n"
+}

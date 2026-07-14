@@ -1,0 +1,107 @@
+{
+  "collectedAt": "2026-07-14T10:20:53.573Z",
+  "identity": {
+    "name": "mineradio-lite",
+    "productName": "Mineradio Lite",
+    "appId": "com.mineradio.lite",
+    "updateProvider": "none",
+    "userDataDir": "Mineradio Lite / MINERADIO_LITE_USER_DATA",
+    "note": "已与原版 Mineradio 身份/安装路径/userData/更新通道隔离"
+  },
+  "gui": {
+    "ok": true,
+    "checks": {
+      "versionOk": true,
+      "discoverOk": true,
+      "discoverIsStarter": true,
+      "perfOk": true,
+      "consoleOk": true,
+      "noFrameAncestorsWarning": true,
+      "lyricsIpcOk": true,
+      "lyricsStubLabeled": true,
+      "consoleErrorCount": 0,
+      "consoleWarningCount": 0,
+      "trayHumanClick": "PENDING_HUMAN"
+    },
+    "version": "name\nmineradio-lite\nproductName\nMineradio Lite\nversion\n0.1.0\nupdate\n未配置",
+    "discover": "登录态：未登录（引导登录）\n\nmode：starter\n\n计数：dailySongs=0 · playlists=0 · podcasts=0",
+    "consoleErrors": 0,
+    "consoleWarnings": 0,
+    "trayHumanClick": "PENDING_HUMAN"
+  },
+  "coldStart60s": {
+    "protocol": "settle 60s, 3 rounds median, isolated clean userData",
+    "lite": {
+      "totalWorkingSetMB_median": 337.6,
+      "processes": 4,
+      "webgl": 0,
+      "raf60s": 0,
+      "residentTimers": [],
+      "canvasDom": 0,
+      "gsap": false,
+      "jsHeapMB": 5.2,
+      "label": "stage0-placeholder-shell-only"
+    },
+    "original": {
+      "totalWorkingSetMB_median": 744.3,
+      "processes": 5,
+      "webgl": "未测(无perf-probe)",
+      "raf60s": "未测(无perf-probe)",
+      "residentTimers": "未测(无perf-probe)",
+      "canvasDom": 6,
+      "gsap": true,
+      "jsHeapMB": 12.2
+    }
+  },
+  "lyricsOnProcessTree": {
+    "lite": {
+      "hasPowershell": false,
+      "totalWsMB": 467,
+      "names": [
+        "electron.exe",
+        "electron.exe",
+        "electron.exe",
+        "electron.exe",
+        "electron.exe"
+      ]
+    },
+    "original": {
+      "hasPowershell": true,
+      "totalWsMB": 848.4,
+      "names": [
+        "electron.exe",
+        "electron.exe",
+        "electron.exe",
+        "electron.exe",
+        "electron.exe",
+        "powershell.exe",
+        "electron.exe",
+        "conhost.exe"
+      ],
+      "powershellCmd": "powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \"\n$ErrorActionPreference = \\\"SilentlyContinue\\\"\nAdd-Type @\\\"\nusing System;\nusing System.Runtime.InteropServices;\npublic c"
+    }
+  },
+  "pauseDrift10min": {
+    "protocol": "enable lyrics paused + settle60 + drift600, sample every 60s",
+    "lite": {
+      "startMB": 449.6,
+      "endMB": 446.2,
+      "deltaMB": -3.4,
+      "hasPowershell": false,
+      "raf60sEnd": 0
+    },
+    "original": {
+      "startMB": 613.4,
+      "endMB": 583.1,
+      "deltaMB": -30.3,
+      "hasPowershellInDriftFile": false,
+      "note": "本次 10min 文件未采到 powershell（采样窗口/时序问题）；独立 lyrics-on 进程树检查已确认原版会拉起 GetAsyncKeyState 轮询 powershell。以 process-tree-check 为准。"
+    }
+  },
+  "honestLimits": [
+    "Lite 为占位壳+桌面歌词测试桩，内存对比不得宣传为最终产品节省比例",
+    "原版无 perf-probe，WebGL/rAF/timer 不得做伪对比结论",
+    "托盘解锁人工点击仍为 PENDING_HUMAN",
+    "30min 真实播放连播保留到阶段 6"
+  ]
+}
