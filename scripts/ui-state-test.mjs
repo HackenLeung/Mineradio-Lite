@@ -25,6 +25,7 @@ const views = ['home', 'search', 'library', 'detail', 'player'].map((route) => (
 const nav = ['home', 'search', 'library', 'player'].map((route) => ({ dataset: { route }, classList: classList(), addEventListener() {} }));
 let backHandler = null;
 globalThis.document = {
+  body: { dataset: {} },
   querySelector(selector) {
     const match = selector.match(/^\[data-view="(.+)"\]$/);
     return match ? views.find((view) => view.route === match[1]) : null;

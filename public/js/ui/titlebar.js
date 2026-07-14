@@ -68,7 +68,6 @@ export function mountTitlebar(root) {
     const keywords = String(input.value || '').trim();
     if (!keywords) return;
     saveSearchHistory(keywords);
-    bus.emit('navigate', 'search');
     store.patch({ searching: true, searchError: '', searchKeywords: keywords, searchResults: [] });
     bus.emit('search-start', keywords);
     try {

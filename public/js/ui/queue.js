@@ -17,7 +17,7 @@ function renderList(host, songs, activeId) {
   if (!songs.length) {
     const empty = document.createElement('div');
     empty.className = 'empty';
-    empty.textContent = '搜索歌曲并点击播放';
+    empty.textContent = host.dataset.mode === 'queue' ? '队列为空' : '没有搜索结果';
     host.appendChild(empty);
     return;
   }
@@ -57,6 +57,7 @@ function renderList(host, songs, activeId) {
       // 若在搜索结果面板，用 playSong 入队；队列面板用 playAt
       if (host.dataset.mode === 'queue') store.playAt(idx);
       else player.playSong(song, { enqueue: true });
+      if (host.dataset.mode !== 'queue') host.classList.remove('open');
       bus.emit('navigate', 'player');
     });
     frag.appendChild(btn);
@@ -67,11 +68,16 @@ function renderList(host, songs, activeId) {
 export function mountSide(root) {
   const resultsEl = document.getElementById('search-results');
   const queueEl = root.querySelector('#queue-list');
+  const miniQueueEl = document.getElementById('mini-queue-list');
+  const miniCountEl = document.getElementById('mini-queue-count');
+  const miniPopover = document.getElementById('mini-queue-popover');
+  const miniButton = document.getElementById('btn-queue');
   const statusEl = document.getElementById('side-status');
   const headingEl = document.getElementById('search-heading');
   const countEl = document.getElementById('queue-count');
   resultsEl.dataset.mode = 'search';
   queueEl.dataset.mode = 'queue';
+  if (miniQueueEl) miniQueueEl.dataset.mode = 'queue';
 
   function setStatus(text) {
     if (statusEl) statusEl.textContent = text || '';
@@ -85,17 +91,21 @@ export function mountSide(root) {
     loading.className = 'loading';
     loading.textContent = '搜索中…';
     resultsEl.appendChild(loading);
+    resultsEl.classList.add('open');
   });
 
   bus.on('search-results', (songs) => {
     const s = store.get();
     setStatus(songs.length ? `找到 ${songs.length} 首` : (s.searchError || '无结果'));
     renderList(resultsEl, songs, s.now && s.now.id);
+    resultsEl.classList.toggle('open', true);
   });
 
   bus.on('store', (s) => {
     renderList(queueEl, s.queue, s.now && s.now.id);
+    if (miniQueueEl) renderList(miniQueueEl, s.queue, s.now && s.now.id);
     if (countEl) countEl.textContent = `${s.queue.length} 首`;
+    if (miniCountEl) miniCountEl.textContent = `${s.queue.length} 首`;
     if (s.searchResults && s.searchResults.length) {
       renderList(resultsEl, s.searchResults, s.now && s.now.id);
     }
@@ -104,4 +114,11 @@ export function mountSide(root) {
   // 初始
   renderList(resultsEl, [], null);
   renderList(queueEl, [], null);
+  if (miniQueueEl) renderList(miniQueueEl, [], null);
+  miniButton?.addEventListener('click', (event) => {
+    event.stopPropagation();
+    miniPopover?.classList.toggle('open');
+  });
+  miniPopover?.addEventListener('click', (event) => event.stopPropagation());
+  document.addEventListener('click', () => miniPopover?.classList.remove('open'));
 }

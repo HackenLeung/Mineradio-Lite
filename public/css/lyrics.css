@@ -29,8 +29,8 @@
   overflow: auto;
   padding: 28px 8px;
   border-radius: 16px;
-  border: 1px solid var(--line);
-  background: rgba(0, 0, 0, 0.18);
+  border: 0;
+  background: transparent;
   scroll-behavior: smooth;
   mask-image: linear-gradient(180deg, transparent, #000 12%, #000 88%, transparent);
   -webkit-mask-image: linear-gradient(180deg, transparent, #000 12%, #000 88%, transparent);
@@ -49,7 +49,7 @@
   border-radius: 12px;
   border: 0;
   background: transparent;
-  color: var(--fg-mute);
+  color: rgba(232,236,239,.28);
   cursor: pointer;
   transition: color 0.2s var(--ease), transform 0.25s var(--ease), background 0.2s var(--ease);
 }
@@ -59,18 +59,18 @@
 }
 .lyric-row.active {
   color: var(--fg);
-  transform: scale(1.06);
-  background: rgba(77, 182, 172, 0.08);
+  transform: scale(1.08);
+  background: rgba(var(--accent-rgb),.055);
 }
 .lyric-main {
   position: relative;
   display: inline-block;
-  font-size: 15px;
+  font-size: 17px;
   line-height: 1.45;
   font-weight: 600;
   max-width: 100%;
 }
-.lyric-row.active .lyric-main { font-size: 17px; }
+.lyric-row.active .lyric-main { font-size: 22px; }
 .lyric-main.is-words {
   /* 双层叠字：底灰 + 顶高亮裁剪 */
 }
@@ -89,7 +89,7 @@
 }
 .lyric-row.active .lyric-main.is-words .lyric-fill {
   color: #e7fffb;
-  text-shadow: 0 0 18px rgba(77, 182, 172, 0.35);
+  text-shadow: 0 0 18px rgba(var(--accent-rgb),.28);
 }
 .lyric-trans {
   margin-top: 2px;

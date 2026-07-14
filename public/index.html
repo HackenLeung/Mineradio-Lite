@@ -19,32 +19,32 @@
 
   <div id="app">
     <header id="titlebar" class="titlebar">
-      <button type="button" class="brand" data-route="home" aria-label="返回首页">Mine<span>radio</span> <small>Lite</small></button>
-      <form id="search-form" class="search-wrap" autocomplete="off">
-        <input id="search-input" class="field" type="search" placeholder="搜索歌曲、歌手…" enterkeyhint="search" />
-      </form>
-      <div class="tabs" title="搜索源">
-        <button type="button" data-provider="netease" class="active">NE</button>
-        <button type="button" data-provider="kugou">KG</button>
+      <div class="search-edge" aria-hidden="true"></div>
+      <div id="search-area" class="search-area">
+        <div id="search-stack">
+          <form id="search-form" class="search-wrap" autocomplete="off">
+            <input id="search-input" class="field" type="search" placeholder="搜索歌曲、歌手…" enterkeyhint="search" />
+          </form>
+          <div id="search-results" class="search-results song-list" data-mode="search"></div>
+        </div>
+        <div class="tabs" title="搜索源"><button type="button" data-provider="netease" class="active">NE</button><button type="button" data-provider="kugou">KG</button></div>
       </div>
-      <button type="button" id="account-state" class="account-pill" title="账号">登录</button>
-      <div class="win-controls">
-        <button type="button" id="btn-min" title="最小化">─</button><button type="button" id="btn-max" title="最大化">□</button><button type="button" id="btn-close" class="close" title="关闭">×</button>
+      <div id="top-right" class="top-right">
+        <button type="button" id="home-entry" class="round-entry" data-route="home" title="回到 Home" aria-label="回到 Home">⌂</button>
+        <button type="button" id="account-state" class="account-pill" title="账号">登录</button>
+        <div class="win-controls"><button type="button" id="btn-min" title="最小化">─</button><button type="button" id="btn-max" title="最大化">□</button><button type="button" id="btn-close" class="close" title="关闭">×</button></div>
       </div>
     </header>
 
     <div class="main">
-      <aside id="side" class="side">
-        <nav class="primary-nav" aria-label="主要页面">
-          <button type="button" class="nav-item active" data-route="home"><span>⌂</span>首页</button>
-          <button type="button" class="nav-item" data-route="player"><span>♫</span>正在播放</button>
-          <button type="button" class="nav-item" data-route="search"><span>⌕</span>搜索</button>
-          <button type="button" class="nav-item" data-route="library"><span>▤</span>我的歌单</button>
-        </nav>
-        <div class="side-section-title"><span>当前队列</span><span id="queue-count">0 首</span></div>
-        <div id="queue-list" class="side-body song-list" data-mode="queue"></div>
-        <div class="side-foot"><span id="app-version-label"></span></div>
-      </aside>
+      <div class="playlist-dock">
+        <div class="playlist-edge" aria-hidden="true"></div>
+        <aside id="side" class="side">
+          <div class="panel-tabs"><span class="active">播放队列 <b id="queue-count">0</b></span><button type="button" data-route="library">我的歌单</button></div>
+          <div id="queue-list" class="side-body song-list" data-mode="queue"></div>
+          <div class="side-foot"><span id="app-version-label"></span></div>
+        </aside>
+      </div>
 
       <main id="workspace" class="workspace">
         <section id="home-view" class="page-view active" data-view="home" aria-label="首页">
@@ -57,10 +57,6 @@
             <section id="home-podcasts-section" class="content-section" hidden><div class="section-head"><h2>热门播客</h2></div><div id="home-podcasts" class="card-grid"></div></section>
             <div id="home-empty" class="home-empty" hidden><strong>登录后同步每日推荐和私人歌单</strong><span>未登录也可以直接搜索网易云或酷狗曲库；你的搜索记录会保存在本机。</span><button type="button" id="home-login" class="chip active">登录账号</button></div>
           </div>
-        </section>
-
-        <section id="search-view" class="page-view" data-view="search" aria-label="搜索结果">
-          <div class="page-scroll"><div class="page-heading"><div><span class="eyebrow">SEARCH</span><h1 id="search-heading">搜索音乐</h1><p id="side-status">在顶部输入歌曲或歌手</p></div></div><div id="search-results" class="result-list song-list" data-mode="search"></div></div>
         </section>
 
         <section id="detail-view" class="page-view" data-view="detail" aria-label="内容详情">
@@ -87,9 +83,15 @@
       </main>
     </div>
 
+    <div id="side-status" class="search-feedback" aria-live="polite"></div>
+
     <footer class="bottombar">
       <div class="transport-meta"><img id="mini-cover" class="mini-cover" alt="" /><div class="texts"><div id="mini-title" class="t">未播放</div><div id="mini-artist" class="a"></div></div></div>
-      <div class="transport-center"><div class="transport-btns"><button type="button" id="btn-mode" class="icon-btn" title="播放模式">➡</button><button type="button" id="btn-prev" class="icon-btn" title="上一首">⏮</button><button type="button" id="btn-play" class="icon-btn primary" title="播放/暂停">▶</button><button type="button" id="btn-next" class="icon-btn" title="下一首">⏭</button></div><div class="progress-row"><span id="time-cur" class="time">0:00</span><input id="seek" class="slider" type="range" min="0" max="0" value="0" step="0.1" /><span id="time-dur" class="time">0:00</span></div></div>
+      <div class="transport-center">
+        <div id="mini-queue-popover" class="mini-queue-popover"><div class="mini-queue-head"><strong>当前队列</strong><span id="mini-queue-count">0 首</span></div><div id="mini-queue-list" class="song-list" data-mode="queue"></div></div>
+        <div class="transport-btns"><button type="button" id="btn-mode" class="icon-btn" title="播放模式">➡</button><button type="button" id="btn-prev" class="icon-btn" title="上一首">⏮</button><button type="button" id="btn-play" class="icon-btn primary" title="播放/暂停">▶</button><button type="button" id="btn-next" class="icon-btn" title="下一首">⏭</button><button type="button" id="btn-queue" class="icon-btn" title="当前队列">☷</button></div>
+        <div class="progress-row"><span id="time-cur" class="time">0:00</span><input id="seek" class="slider" type="range" min="0" max="0" value="0" step="0.1" /><span id="time-dur" class="time">0:00</span></div>
+      </div>
       <div class="transport-extra"><button type="button" id="btn-mute" class="icon-btn" title="静音">🔊</button><div class="volume-wrap"><input id="volume" class="slider" type="range" min="0" max="1" step="0.01" value="0.85" /></div><div class="quality-menu"><button type="button" id="btn-quality" class="chip" title="音质">音质</button><div id="quality-pop" class="quality-pop"></div></div></div>
     </footer>
   </div>
