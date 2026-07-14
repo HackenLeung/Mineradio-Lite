@@ -9,6 +9,14 @@ function currentNeteaseSong() {
   return song && (song.provider || song.source || 'netease') === 'netease' ? song : null;
 }
 function close(id) { const modal = document.getElementById(id); if (modal) modal.hidden = true; }
+function formatCommentCount(n) {
+  const value = Math.max(0, Math.floor(Number(n) || 0));
+  return value > 999 ? '999+' : String(value);
+}
+function setCommentCountDisplay(n) {
+  const el = document.getElementById('comment-count');
+  if (el) el.textContent = formatCommentCount(n);
+}
 
 export function mountSongActions() {
   const likeButton = document.getElementById('btn-like');
@@ -16,6 +24,7 @@ export function mountSongActions() {
   const collectButton = document.getElementById('btn-collect');
   let liked = false;
   let likeToken = 0;
+  let commentToken = 0;
 
   async function syncLike(song) {
     const token = ++likeToken;
@@ -45,6 +54,23 @@ export function mountSongActions() {
     finally { likeButton.disabled = false; }
   });
 
+  async function syncCommentCount(song) {
+    const token = ++commentToken;
+    if (!song || (song.provider || song.source || 'netease') !== 'netease') {
+      setCommentCountDisplay(0);
+      return;
+    }
+    try {
+      // 仅取总数：limit=1 降低流量，total 由后端 body.total 提供
+      const data = await fetchSongComments(song.id, 1, 0);
+      if (token !== commentToken) return;
+      setCommentCountDisplay(data.total || data.comments?.length || 0);
+    } catch (_) {
+      if (token !== commentToken) return;
+      setCommentCountDisplay(0);
+    }
+  }
+
   commentButton?.addEventListener('click', async () => {
     const song = currentNeteaseSong();
     if (!song) { toast('评论当前支持网易云歌曲'); return; }
@@ -55,7 +81,8 @@ export function mountSongActions() {
     clear(list); const loading = document.createElement('div'); loading.className = 'loading'; loading.textContent = '正在读取评论…'; list.appendChild(loading); modal.hidden = false;
     try {
       const data = await fetchSongComments(song.id, 30, 0);
-      clear(list); document.getElementById('comment-count').textContent = String(data.total || data.comments?.length || 0);
+      clear(list);
+      setCommentCountDisplay(data.total || data.comments?.length || 0);
       const comments = Array.isArray(data.comments) ? data.comments : [];
       if (!comments.length) { const empty = document.createElement('div'); empty.className = 'empty'; empty.textContent = '暂无评论'; list.appendChild(empty); return; }
       comments.forEach((comment) => {
@@ -91,7 +118,16 @@ export function mountSongActions() {
   document.getElementById('collect-close')?.addEventListener('click', () => close('collect-modal'));
   document.getElementById('comment-modal')?.addEventListener('click', (event) => { if (event.target.id === 'comment-modal') close('comment-modal'); });
   document.getElementById('collect-modal')?.addEventListener('click', (event) => { if (event.target.id === 'collect-modal') close('collect-modal'); });
-  store.get().now && syncLike(store.get().now);
+  const initial = store.get().now;
+  if (initial) {
+    syncLike(initial);
+    syncCommentCount(initial);
+  } else {
+    setCommentCountDisplay(0);
+  }
   document.addEventListener('keydown', (event) => { if (event.key === 'Escape') { close('comment-modal'); close('collect-modal'); } });
-  bus.on('song-change', syncLike);
+  bus.on('song-change', (song) => {
+    syncLike(song);
+    syncCommentCount(song);
+  });
 }

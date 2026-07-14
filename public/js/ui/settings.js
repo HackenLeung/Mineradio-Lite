@@ -11,6 +11,7 @@ export function mountSettings() {
   const volumeValue = document.getElementById('setting-volume-value');
   const provider = document.getElementById('setting-provider');
   const desktopLyrics = document.getElementById('setting-desktop-lyrics');
+  const cubeRemote = document.getElementById('setting-cube-remote');
   const smartTransition = document.getElementById('setting-smart-transition');
   store.QUALITIES.forEach((item) => { const option = document.createElement('option'); option.value = item.key; option.textContent = item.label + (item.svip ? ' · SVIP' : ''); quality.appendChild(option); });
 
@@ -26,9 +27,13 @@ export function mountSettings() {
   rate.addEventListener('input', () => player.setPlaybackRate(Number(rate.value)));
   volume.addEventListener('input', () => player.setVolume(Number(volume.value)));
   provider.addEventListener('change', () => { store.patch({ searchProvider: provider.value }); bus.emit('search-provider-changed', provider.value); });
-  smartTransition.addEventListener('change', () => store.patch({ smartTransition: smartTransition.checked }));
+  smartTransition.addEventListener('change', () => {
+    store.patch({ smartTransition: smartTransition.checked });
+    // 只记设置，不弹 toast、不打断当前播放
+  });
   document.getElementById('setting-account')?.addEventListener('click', () => document.getElementById('account-state')?.click());
   document.getElementById('setting-library')?.addEventListener('click', () => bus.emit('navigate', 'library'));
   document.getElementById('setting-fullscreen')?.addEventListener('click', () => desktop.toggleFullscreen());
   desktopLyrics.checked = false;
+  if (cubeRemote) cubeRemote.disabled = !desktop.isDesktop();
 }

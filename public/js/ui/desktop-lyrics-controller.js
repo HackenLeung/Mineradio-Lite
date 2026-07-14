@@ -4,16 +4,31 @@ import { store } from '../core/store.js';
 import { toast } from './toast.js';
 
 const ENABLED_KEY = 'mineradio-lite-desktop-lyrics-enabled';
+const PLACEHOLDER_TEXTS = new Set(['播放歌曲后显示歌词', '歌词加载中…', '歌词加载中...', '暂无歌词', 'Mineradio']);
 
 let enabled = false;
 let lyricState = { text: '播放歌曲后显示歌词', progress: 0, progressSpan: 4.8 };
 let operationToken = 0;
 
+function songDesktopText(song) {
+  if (!song) return '';
+  const name = String(song.name || '未知歌曲').trim() || '未知歌曲';
+  const artist = String(song.artist || '').trim();
+  return artist ? `${name} · ${artist}` : name;
+}
+
+function resolveDesktopText() {
+  const raw = String(lyricState.text || '').trim();
+  const songText = songDesktopText(store.get().now);
+  if (songText && (!raw || PLACEHOLDER_TEXTS.has(raw))) return songText;
+  return raw || songText || '播放歌曲后显示歌词';
+}
+
 function payload() {
   return {
     enabled,
     playing: !!store.get().playing,
-    text: lyricState.text || '暂无歌词',
+    text: resolveDesktopText(),
     progress: Number(lyricState.progress) || 0,
     progressSpan: Math.max(0.75, Number(lyricState.progressSpan) || 4.8),
     clickThrough: true,
@@ -42,6 +57,8 @@ async function setEnabled(next, { fromMain = false, quiet = false } = {}) {
   enabled = value;
   remember();
   syncControls();
+  // 通知魔方等高亮桌面歌词状态
+  bus.emit('desktop-lyrics-enabled-change', enabled);
   if (fromMain) return;
   try {
     const result = await desktop.setDesktopLyricsEnabled(value, payload());
@@ -53,6 +70,7 @@ async function setEnabled(next, { fromMain = false, quiet = false } = {}) {
     enabled = false;
     remember();
     syncControls();
+    bus.emit('desktop-lyrics-enabled-change', false);
     toast.error(error.message || '桌面歌词切换失败');
   }
 }
@@ -71,8 +89,20 @@ export function mountDesktopLyricsController() {
     lyricState = { ...lyricState, ...(next || {}) };
     updateWindow();
   });
+  // 切歌瞬间先显示歌名/歌手，等歌词到位后再由 desktop-lyric-sync 覆盖
+  bus.on('song-change', (song) => {
+    const text = songDesktopText(song) || '播放歌曲后显示歌词';
+    lyricState = { ...lyricState, text, progress: 0, progressSpan: 4.8 };
+    updateWindow();
+  });
   bus.on('playing-change', updateWindow);
-  bus.on('seek', updateWindow);
+  // seek/重播：进度强制按最新 lyricState 推送；回到曲首时清零进度，避免桌面高亮卡在旧进度
+  bus.on('seek', (time) => {
+    if ((Number(time) || 0) <= 0.2) {
+      lyricState = { ...lyricState, progress: 0 };
+    }
+    updateWindow();
+  });
   desktop.onDesktopLyricsEnabledState((state) => setEnabled(!!state?.enabled, { fromMain: true }));
   try { enabled = localStorage.getItem(ENABLED_KEY) === '1'; } catch (_) { enabled = false; }
   syncControls();

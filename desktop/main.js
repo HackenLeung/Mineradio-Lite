@@ -22,13 +22,30 @@ let desktopLyricsMouseIgnored = null;
 // desktopLyricsHotBounds 保留：仍由 setLyricsHotBounds IPC 契约写入。
 let desktopLyricsHotBounds = null;
 // Lite: 删除壁纸窗口/状态变量（wallpaperWindow / wallpaperState）。
+// 魔方遥控（酷狗魔方风格悬浮控制）
+let cubeRemoteWindow = null;
+let cubeRemoteState = {
+  enabled: false,
+  title: '未播放',
+  artist: '',
+  cover: '',
+  playing: false,
+  volume: 0.85,
+  muted: false,
+  lyricsEnabled: false,
+  showMeta: false,
+  expanded: false,
+  volumeOpen: false,
+  mainVisible: true,
+};
+let cubeRemoteUserBounds = null;
 let htmlFullscreenActive = false;
 let windowFullscreenActive = false;
 let mainWindowStateTimer = null;
 let mineradioTray = null;
 let appQuitting = false;
 let desktopBehaviorSettings = null;
-let trayPlaybackState = { title: '未播放', artist: '', playing: false, volume: 1 };
+let trayPlaybackState = { title: '未播放', artist: '', playing: false, volume: 1, cover: '' };
 const registeredGlobalHotkeys = new Map();
 
 const WINDOWED_ASPECT = 16 / 9;
@@ -275,16 +292,37 @@ function desktopBehaviorPath() {
 
 function readDesktopBehaviorSettings() {
   if (desktopBehaviorSettings) return desktopBehaviorSettings;
-  const defaults = { closeToTray: false, openAtLogin: false, immersiveAutoFullscreen: false };
+  const defaults = {
+    closeToTray: false,
+    openAtLogin: false,
+    immersiveAutoFullscreen: false,
+    cubeRemote: false,
+    cubeRemoteBounds: null,
+  };
   try {
     const raw = JSON.parse(fs.readFileSync(desktopBehaviorPath(), 'utf8')) || {};
+    const bounds = raw.cubeRemoteBounds && typeof raw.cubeRemoteBounds === 'object'
+      ? {
+        x: Number(raw.cubeRemoteBounds.x),
+        y: Number(raw.cubeRemoteBounds.y),
+        width: Number(raw.cubeRemoteBounds.width),
+        height: Number(raw.cubeRemoteBounds.height),
+      }
+      : null;
     desktopBehaviorSettings = {
       closeToTray: raw.closeToTray === true,
       openAtLogin: raw.openAtLogin === true,
       immersiveAutoFullscreen: raw.immersiveAutoFullscreen === true,
+      cubeRemote: raw.cubeRemote === true,
+      cubeRemoteBounds: bounds && [bounds.x, bounds.y, bounds.width, bounds.height].every(Number.isFinite)
+        ? bounds
+        : null,
     };
   } catch (_e) {
     desktopBehaviorSettings = defaults;
+  }
+  if (desktopBehaviorSettings.cubeRemoteBounds) {
+    cubeRemoteUserBounds = { ...desktopBehaviorSettings.cubeRemoteBounds };
   }
   return desktopBehaviorSettings;
 }
@@ -301,11 +339,40 @@ function saveDesktopBehaviorSettings(next) {
   } catch (e) {
     console.warn('Login item update failed:', e.message);
   }
-  updateMineradioTray();
+  // 魔方开启时隐藏托盘；关闭魔方后恢复托盘
+  if (desktopBehaviorSettings.cubeRemote) destroyMineradioTray();
+  else {
+    ensureMineradioTray();
+    updateMineradioTray();
+  }
   return Object.assign({}, desktopBehaviorSettings);
 }
 
+function rememberCubeRemoteBounds(bounds) {
+  if (!bounds) return;
+  const next = {
+    x: Math.round(Number(bounds.x) || 0),
+    y: Math.round(Number(bounds.y) || 0),
+    width: Math.round(Number(bounds.width) || 72),
+    height: Math.round(Number(bounds.height) || 72),
+  };
+  cubeRemoteUserBounds = next;
+  // 持久化，重启后仍回到上次位置
+  saveDesktopBehaviorSettings({ cubeRemoteBounds: next });
+}
+
+function destroyMineradioTray() {
+  if (!mineradioTray) return;
+  try { mineradioTray.destroy(); } catch (_e) {}
+  mineradioTray = null;
+}
+
 function ensureMineradioTray() {
+  // 魔方开启期间不创建托盘（遥控面板取代托盘入口）
+  if (readDesktopBehaviorSettings().cubeRemote) {
+    destroyMineradioTray();
+    return null;
+  }
   if (mineradioTray || !fs.existsSync(APP_ICON_ICO)) return mineradioTray;
   mineradioTray = new Tray(APP_ICON_ICO);
   mineradioTray.setToolTip(APP_NAME);
@@ -340,15 +407,6 @@ function updateMineradioTray() {
         { label: '音量 -10%', click: () => sendTrayCommand('volume', { value: -0.1 }) },
         { label: volume > 0.001 ? '静音' : '恢复音量', click: () => sendTrayCommand('mute') },
       ],
-    },
-    { type: 'separator' },
-    // Lite: 桌面歌词锁定/解锁托盘入口（见 docs/prohibited.md §3）。原中键轮询解锁已删除，
-    // 此项为不依赖歌词窗口点击的可靠解锁路径。仅在桌面歌词开启时可用。
-    // 阶段 0 验收必须人工点击托盘菜单实测，IPC 等价调用不算托盘验收通过。
-    {
-      label: desktopLyricsIsLocked() ? '解锁桌面歌词' : '锁定桌面歌词',
-      enabled: !!(desktopLyricsWindow && !desktopLyricsWindow.isDestroyed()),
-      click: () => setDesktopLyricsLocked(!desktopLyricsIsLocked()),
     },
     { type: 'separator' },
     { label: `打开 ${APP_NAME}`, click: focusMainWindow },
@@ -473,6 +531,27 @@ function focusMainWindow() {
   if (!mainWindow.isVisible()) mainWindow.show();
   mainWindow.focus();
   sendWindowState(mainWindow);
+  syncCubeMainVisibility();
+  return true;
+}
+
+function mainWindowIsVisible() {
+  return !!(mainWindow && !mainWindow.isDestroyed() && mainWindow.isVisible() && !mainWindow.isMinimized());
+}
+
+function syncCubeMainVisibility() {
+  cubeRemoteState = { ...cubeRemoteState, mainVisible: mainWindowIsVisible() };
+  sendCubeRemoteState();
+}
+
+function toggleMainWindowVisibility() {
+  if (!mainWindow || mainWindow.isDestroyed()) return false;
+  if (mainWindowIsVisible()) {
+    mainWindow.hide();
+    syncCubeMainVisibility();
+    return false;
+  }
+  focusMainWindow();
   return true;
 }
 
@@ -1000,21 +1079,22 @@ function rememberDesktopLyricsBounds() {
 
 function applyDesktopLyricsMouseBehavior() {
   if (!desktopLyricsWindow || desktopLyricsWindow.isDestroyed()) return;
+  // 锁定穿透：ignore + forward，鼠标移过窗口时仍能触发 renderer hover，
+  // renderer 再 setLyricsPointerCapture(true) 临时接收点击。
+  // 注意：forward 模式下只有“鼠标移动”转发，点击本身仍被忽略，直到 pointerCapture 打开。
   const locked = desktopLyricsState.clickThrough !== false;
-  const shouldIgnore = locked || !desktopLyricsPointerCapture;
+  const shouldIgnore = locked && !desktopLyricsPointerCapture;
   if (desktopLyricsMouseIgnored === shouldIgnore) return;
   desktopLyricsMouseIgnored = shouldIgnore;
-  desktopLyricsWindow.setIgnoreMouseEvents(shouldIgnore, { forward: true });
+  try {
+    desktopLyricsWindow.setIgnoreMouseEvents(shouldIgnore, { forward: true });
+  } catch (e) {
+    try { desktopLyricsWindow.setIgnoreMouseEvents(shouldIgnore); } catch (_e) {}
+  }
 }
 
-// Lite: 删除主进程鼠标轮询链（desktopLyricsHotBoundsOnScreen / pointInBounds /
-// handleDesktopLyricsGlobalMiddleClick / startDesktopLyricsMousePoller /
-// stopDesktopLyricsMousePoller）——这些函数原本仅服务于每 24ms 调 GetAsyncKeyState
-// 的 PowerShell 常驻轮询进程（中键切换锁定）。轮询进程暂停播放时仍运行且 renderer
-// 探针检测不到，属禁止的常驻外部进程（见 docs/prohibited.md §3）。
-// 解锁改用不依赖窗口点击的路径：主窗口锁定/解锁开关（onDesktopLyricsLockState +
-// setLyricsLockState IPC）、托盘「解锁桌面歌词」、全局快捷键（configureGlobalHotkeys）。
-// 未穿透时窗口自身 pointer 事件仍可经 setLyricsPointerCapture 生效。
+// Lite: 删除主进程鼠标轮询链。锁定态解锁改由歌词窗悬停按钮（hover + 临时 pointer capture）
+// 与主窗口开关完成，不再依赖托盘「解锁桌面歌词」或 24ms 中键轮询。
 
 function broadcastDesktopLyricsLockState() {
   const locked = desktopLyricsState.clickThrough !== false;
@@ -1024,18 +1104,15 @@ function broadcastDesktopLyricsLockState() {
   sendDesktopLyricsState();
 }
 
-// Lite: 桌面歌词锁定/解锁的单一入口（见 docs/prohibited.md §3）。原版靠每 24ms 的
-// PowerShell 中键轮询切换锁定；轮询已删除，故解锁必须走不依赖歌词窗口点击的路径。
-// 托盘菜单「锁定/解锁桌面歌词」、主窗口开关（setLyricsLockState IPC）均调用此函数。
-// locked=true → clickThrough:true → setIgnoreMouseEvents(true)（穿透，不可交互）；
-// locked=false → clickThrough:false + 恢复 pointerCapture → 歌词窗口可交互。
+// Lite: 桌面歌词锁定/解锁单一入口。
+// locked=true → clickThrough:true → 默认穿透；hover 时 renderer 临时 pointerCapture 可点解锁按钮。
+// locked=false → clickThrough:false → 可拖动/关闭。
 function setDesktopLyricsLocked(locked) {
   const nextLocked = !!locked;
   desktopLyricsState = { ...desktopLyricsState, clickThrough: nextLocked };
   desktopLyricsPointerCapture = !nextLocked;
   applyDesktopLyricsMouseBehavior();
   broadcastDesktopLyricsLockState();
-  updateMineradioTray();
   return { ok: true, locked: desktopLyricsState.clickThrough !== false };
 }
 
@@ -1153,8 +1230,171 @@ function closeDesktopLyricsWindow() {
 // sendWallpaperState / createWallpaperWindow(加载 wallpaper.html) / closeWallpaperWindow）。
 // 见 docs/prohibited.md §3：壁纸模式需求明确不要，源码零功能残留。
 
+function cubeRemoteSize(state = {}) {
+  if (!state.expanded) return { width: 72, height: 72 };
+  return { width: state.volumeOpen ? 278 : 220, height: 154 };
+}
+
+function cubeRemoteDefaultBounds(state = {}) {
+  // 首次默认：屏幕工作区右下角（应用外侧），不贴主窗内部
+  const size = cubeRemoteSize(state);
+  const display = (mainWindow && !mainWindow.isDestroyed())
+    ? screen.getDisplayMatching(mainWindow.getBounds())
+    : screen.getPrimaryDisplay();
+  const area = display.workArea || display.bounds;
+  const margin = 28;
+  return constrainCubeRemoteBounds({
+    x: Math.round(area.x + area.width - size.width - margin),
+    y: Math.round(area.y + area.height - size.height - margin),
+    width: size.width,
+    height: size.height,
+  });
+}
+
+function resizeCubeRemoteBounds(bounds, state = {}) {
+  const size = cubeRemoteSize(state);
+  // 展开/收起保持中心点不变，鼠标移开收起时不会“跳到角落”
+  return constrainCubeRemoteBounds({
+    x: Math.round(bounds.x + (bounds.width - size.width) / 2),
+    y: Math.round(bounds.y + (bounds.height - size.height) / 2),
+    width: size.width,
+    height: size.height,
+  });
+}
+
+function constrainCubeRemoteBounds(bounds) {
+  const display = screen.getDisplayMatching(bounds || cubeRemoteDefaultBounds());
+  const area = display.workArea || display.bounds;
+  const next = {
+    ...bounds,
+    width: Math.round(Math.min(Math.max(72, bounds.width || 72), area.width)),
+    height: Math.round(Math.min(Math.max(72, bounds.height || 72), area.height)),
+  };
+  const maxX = area.x + Math.max(0, area.width - next.width);
+  const maxY = area.y + Math.max(0, area.height - next.height);
+  next.x = Math.round(clampNumber(next.x, area.x, maxX, area.x));
+  next.y = Math.round(clampNumber(next.y, area.y, maxY, area.y));
+  return next;
+}
+
+function sendCubeRemoteState() {
+  if (!cubeRemoteWindow || cubeRemoteWindow.isDestroyed()) return;
+  cubeRemoteWindow.webContents.send('mineradio-cube-remote-state', cubeRemoteState);
+}
+
+function broadcastCubeRemoteEnabledState(enabled) {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('mineradio-cube-remote-enabled-state', { enabled: !!enabled });
+  }
+}
+
+function createCubeRemoteWindow(payload = {}) {
+  cubeRemoteState = {
+    ...cubeRemoteState,
+    ...(payload || {}),
+    enabled: true,
+  };
+  if (cubeRemoteWindow && !cubeRemoteWindow.isDestroyed()) {
+    sendCubeRemoteState();
+    return cubeRemoteWindow;
+  }
+
+  const bounds = cubeRemoteUserBounds
+    ? constrainCubeRemoteBounds(resizeCubeRemoteBounds(cubeRemoteUserBounds, cubeRemoteState))
+    : cubeRemoteDefaultBounds(cubeRemoteState);
+
+  cubeRemoteWindow = new BrowserWindow({
+    ...bounds,
+    frame: false,
+    transparent: true,
+    backgroundColor: '#00000000',
+    hasShadow: false,
+    resizable: false,
+    movable: true,
+    focusable: true,
+    skipTaskbar: true,
+    show: false,
+    alwaysOnTop: true,
+    title: 'Mineradio Cube Remote',
+    webPreferences: {
+      preload: path.join(__dirname, 'overlay-preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: false,
+    },
+  });
+  try {
+    cubeRemoteWindow.setAlwaysOnTop(true, 'screen-saver');
+    cubeRemoteWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
+  } catch (e) {
+    console.warn('Cube remote topmost setup skipped:', e.message);
+  }
+  // 确保首次显示时位置在屏幕/主窗可见区域内
+  try {
+    cubeRemoteWindow.setBounds(constrainCubeRemoteBounds(cubeRemoteWindow.getBounds()), false);
+  } catch (_e) {}
+  cubeRemoteWindow.once('ready-to-show', () => {
+    if (!cubeRemoteWindow || cubeRemoteWindow.isDestroyed()) return;
+    try {
+      cubeRemoteWindow.setBounds(constrainCubeRemoteBounds(cubeRemoteWindow.getBounds()), false);
+    } catch (_e) {}
+    cubeRemoteWindow.showInactive();
+    sendCubeRemoteState();
+  });
+  cubeRemoteWindow.webContents.once('did-finish-load', sendCubeRemoteState);
+  cubeRemoteWindow.on('moved', () => {
+    if (!cubeRemoteWindow || cubeRemoteWindow.isDestroyed()) return;
+    rememberCubeRemoteBounds(cubeRemoteWindow.getBounds());
+  });
+  cubeRemoteWindow.on('closed', () => {
+    cubeRemoteWindow = null;
+    cubeRemoteState = { ...cubeRemoteState, enabled: false };
+    // 窗口被关闭时同步关闭设置，并恢复托盘（保留 cubeRemoteBounds）
+    saveDesktopBehaviorSettings({ cubeRemote: false });
+    broadcastCubeRemoteEnabledState(false);
+  });
+  cubeRemoteWindow.loadURL(overlayUrl('cube-remote.html')).catch((e) => {
+    console.warn('Cube remote load failed:', e.message);
+  });
+  return cubeRemoteWindow;
+}
+
+function closeCubeRemoteWindow({ fromSettings = false } = {}) {
+  cubeRemoteState = { ...cubeRemoteState, enabled: false };
+  if (cubeRemoteWindow && !cubeRemoteWindow.isDestroyed()) {
+    // 避免 closed 回调再次把设置关掉时重复广播
+    cubeRemoteWindow.removeAllListeners('closed');
+    cubeRemoteWindow.close();
+  }
+  cubeRemoteWindow = null;
+  if (!fromSettings) saveDesktopBehaviorSettings({ cubeRemote: false });
+  broadcastCubeRemoteEnabledState(false);
+}
+
+function setCubeRemoteEnabled(enabled, payload = {}) {
+  const value = !!enabled;
+  saveDesktopBehaviorSettings({ cubeRemote: value });
+  if (value) {
+    createCubeRemoteWindow({
+      ...trayPlaybackState,
+      title: trayPlaybackState.title || '未播放',
+      artist: trayPlaybackState.artist || '',
+      volume: trayPlaybackState.volume,
+      playing: !!trayPlaybackState.playing,
+      mainVisible: mainWindowIsVisible(),
+      ...payload,
+      enabled: true,
+    });
+    broadcastCubeRemoteEnabledState(true);
+  } else {
+    closeCubeRemoteWindow({ fromSettings: true });
+  }
+  return { ok: true, enabled: value };
+}
+
 function closeOverlayWindows() {
   closeDesktopLyricsWindow();
+  closeCubeRemoteWindow({ fromSettings: true });
   // Lite: 删除 closeWallpaperWindow() 调用（壁纸窗口已移除）。
 }
 
@@ -1175,6 +1415,13 @@ const DESKTOP_LYRICS_WINDOW_CHANNELS = new Set([
   'mineradio-desktop-lyrics-set-hot-bounds',
   'mineradio-desktop-lyrics-set-lock-state',
   'mineradio-desktop-lyrics-set-pointer-capture',
+]);
+
+// 魔方遥控窗（overlay-preload.js）实际使用的 channel。
+const CUBE_REMOTE_WINDOW_CHANNELS = new Set([
+  'mineradio-cube-remote-command',
+  'mineradio-cube-remote-move-by',
+  'mineradio-cube-remote-resize',
 ]);
 
 function ipcSenderFrameOrigin(event) {
@@ -1206,6 +1453,9 @@ function isIpcCallAllowed(event, channel) {
   if (ownerWindow === mainWindow) return true;            // 主窗：主应用所需全部 handler
   if (ownerWindow === desktopLyricsWindow) {              // 歌词窗：仅歌词 channel 子集
     return DESKTOP_LYRICS_WINDOW_CHANNELS.has(channel);
+  }
+  if (ownerWindow === cubeRemoteWindow) {                 // 魔方窗：仅魔方 channel 子集
+    return CUBE_REMOTE_WINDOW_CHANNELS.has(channel);
   }
   return false;                                           // 其他窗口一律拒绝
 }
@@ -1253,7 +1503,24 @@ ipcMain.handle('mineradio-desktop-behavior-set', (_event, payload = {}) => {
   if (Object.prototype.hasOwnProperty.call(payload, 'closeToTray')) next.closeToTray = payload.closeToTray === true;
   if (Object.prototype.hasOwnProperty.call(payload, 'openAtLogin')) next.openAtLogin = payload.openAtLogin === true;
   if (Object.prototype.hasOwnProperty.call(payload, 'immersiveAutoFullscreen')) next.immersiveAutoFullscreen = payload.immersiveAutoFullscreen === true;
-  return saveDesktopBehaviorSettings(next);
+  if (Object.prototype.hasOwnProperty.call(payload, 'cubeRemote')) next.cubeRemote = payload.cubeRemote === true;
+  const saved = saveDesktopBehaviorSettings(next);
+  if (Object.prototype.hasOwnProperty.call(next, 'cubeRemote')) {
+    if (next.cubeRemote) {
+      createCubeRemoteWindow({
+        title: trayPlaybackState.title || '未播放',
+        artist: trayPlaybackState.artist || '',
+        cover: trayPlaybackState.cover || '',
+        playing: !!trayPlaybackState.playing,
+        volume: trayPlaybackState.volume,
+        enabled: true,
+      });
+      broadcastCubeRemoteEnabledState(true);
+    } else {
+      closeCubeRemoteWindow({ fromSettings: true });
+    }
+  }
+  return saved;
 });
 
 ipcMain.handle('mineradio-tray-playback-update', (_event, payload = {}) => {
@@ -1262,10 +1529,103 @@ ipcMain.handle('mineradio-tray-playback-update', (_event, payload = {}) => {
     artist: String(payload.artist || '').trim(),
     playing: payload.playing === true,
     volume: Math.max(0, Math.min(1, Number(payload.volume) || 0)),
+    cover: String(payload.cover || '').trim(),
+    muted: payload.muted === true,
   };
   ensureMineradioTray();
   updateMineradioTray();
+  // 同步魔方状态
+  if (cubeRemoteWindow && !cubeRemoteWindow.isDestroyed()) {
+    cubeRemoteState = {
+      ...cubeRemoteState,
+      title: trayPlaybackState.title,
+      artist: trayPlaybackState.artist,
+      cover: trayPlaybackState.cover,
+      playing: trayPlaybackState.playing,
+      volume: trayPlaybackState.volume,
+      muted: trayPlaybackState.muted,
+    };
+    sendCubeRemoteState();
+  }
   return { ok: true };
+});
+
+ipcMain.handle('mineradio-cube-remote-set-enabled', (_event, enabled, payload) => {
+  try {
+    return setCubeRemoteEnabled(!!enabled, payload || {});
+  } catch (e) {
+    return { ok: false, error: e.message || 'CUBE_REMOTE_FAILED' };
+  }
+});
+
+ipcMain.handle('mineradio-cube-remote-update', (_event, payload = {}) => {
+  try {
+    cubeRemoteState = { ...cubeRemoteState, ...(payload || {}) };
+    if (cubeRemoteState.enabled) {
+      if (!cubeRemoteWindow || cubeRemoteWindow.isDestroyed()) createCubeRemoteWindow(cubeRemoteState);
+      else sendCubeRemoteState();
+    }
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e.message || 'CUBE_REMOTE_UPDATE_FAILED' };
+  }
+});
+
+ipcMain.handle('mineradio-cube-remote-command', (_event, command, payload = {}) => {
+  try {
+    const cmd = String(command || '').trim();
+    if (!cmd) return { ok: false, error: 'CUBE_COMMAND_EMPTY' };
+    if (cmd === 'open-main') {
+      focusMainWindow();
+      return { ok: true };
+    }
+    if (cmd === 'toggle-main') {
+      const visible = toggleMainWindowVisibility();
+      return { ok: true, visible };
+    }
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('mineradio-cube-remote-command', { command: cmd, ...(payload || {}) });
+    }
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e.message || 'CUBE_COMMAND_FAILED' };
+  }
+});
+
+ipcMain.handle('mineradio-cube-remote-move-by', (_event, dx, dy) => {
+  try {
+    if (!cubeRemoteWindow || cubeRemoteWindow.isDestroyed()) return { ok: false, error: 'NO_CUBE_WINDOW' };
+    const bounds = cubeRemoteWindow.getBounds();
+    const next = constrainCubeRemoteBounds({
+      ...bounds,
+      x: Math.round(bounds.x + clampNumber(dx, -240, 240, 0)),
+      y: Math.round(bounds.y + clampNumber(dy, -240, 240, 0)),
+    });
+    cubeRemoteWindow.setBounds(next, false);
+    rememberCubeRemoteBounds(cubeRemoteWindow.getBounds());
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e.message || 'CUBE_MOVE_FAILED' };
+  }
+});
+
+ipcMain.handle('mineradio-cube-remote-resize', (_event, payload = {}) => {
+  try {
+    if (!cubeRemoteWindow || cubeRemoteWindow.isDestroyed()) return { ok: false, error: 'NO_CUBE_WINDOW' };
+    const showMeta = payload.showMeta === true;
+    const expanded = payload.expanded === true || showMeta;
+    const volumeOpen = payload.volumeOpen === true && expanded;
+    cubeRemoteState = { ...cubeRemoteState, showMeta, expanded, volumeOpen };
+    const bounds = cubeRemoteWindow.getBounds();
+    const next = resizeCubeRemoteBounds(bounds, cubeRemoteState);
+    cubeRemoteWindow.setBounds(next, false);
+    // 展开/收起不覆盖用户锚点坐标，只更新内存尺寸；真正拖动时再持久化
+    cubeRemoteUserBounds = cubeRemoteWindow.getBounds();
+    sendCubeRemoteState();
+    return { ok: true, showMeta, expanded, volumeOpen };
+  } catch (e) {
+    return { ok: false, error: e.message || 'CUBE_RESIZE_FAILED' };
+  }
 });
 
 ipcMain.handle('mineradio-hotkeys-configure-global', (_event, bindings) => {
@@ -1628,14 +1988,31 @@ async function createWindow() {
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
     sendWindowState(mainWindow);
+    // 主窗就绪后再恢复魔方，保证 IPC 广播与页面加载都可用
+    if (readDesktopBehaviorSettings().cubeRemote) {
+      createCubeRemoteWindow({ enabled: true });
+      broadcastCubeRemoteEnabledState(true);
+    }
   });
 
   mainWindow.on('maximize', () => sendWindowState(mainWindow));
   mainWindow.on('unmaximize', () => sendWindowState(mainWindow));
-  mainWindow.on('minimize', () => sendWindowState(mainWindow));
-  mainWindow.on('restore', () => sendWindowState(mainWindow));
-  mainWindow.on('show', () => sendWindowState(mainWindow));
-  mainWindow.on('hide', () => sendWindowState(mainWindow));
+  mainWindow.on('minimize', () => {
+    sendWindowState(mainWindow);
+    syncCubeMainVisibility();
+  });
+  mainWindow.on('restore', () => {
+    sendWindowState(mainWindow);
+    syncCubeMainVisibility();
+  });
+  mainWindow.on('show', () => {
+    sendWindowState(mainWindow);
+    syncCubeMainVisibility();
+  });
+  mainWindow.on('hide', () => {
+    sendWindowState(mainWindow);
+    syncCubeMainVisibility();
+  });
   mainWindow.on('focus', () => sendWindowState(mainWindow));
   mainWindow.on('blur', () => sendWindowState(mainWindow));
   mainWindow.on('move', () => scheduleWindowStateSend(mainWindow));

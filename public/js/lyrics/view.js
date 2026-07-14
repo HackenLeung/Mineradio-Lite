@@ -97,13 +97,25 @@ export function mountLyricsView(root) {
   }, { passive: true });
   returnButton.addEventListener('click', () => resumeAutoFollow('smooth'));
 
-  function setStatus(text, kind) {
+  function songDesktopText(song) {
+    if (!song) return '';
+    const name = String(song.name || '未知歌曲').trim() || '未知歌曲';
+    const artist = String(song.artist || '').trim();
+    return artist ? `${name} · ${artist}` : name;
+  }
+
+  function setStatus(text, kind, song) {
     if (!statusEl) return;
     statusEl.hidden = !text;
     statusEl.textContent = text || '';
     statusEl.dataset.kind = kind || '';
     returnButton.hidden = true;
-    if (text) bus.emit('desktop-lyric-sync', { text, progress: 0, progressSpan: 4.8 });
+    if (!text) return;
+    // 加载/空态时桌面歌词显示歌名歌手，而不是“歌词加载中…”
+    const desktopText = (kind === 'loading' || kind === 'empty')
+      ? (songDesktopText(song || store.get().now) || text)
+      : text;
+    bus.emit('desktop-lyric-sync', { text: desktopText, progress: 0, progressSpan: 4.8 });
   }
 
   function clearRows() {
@@ -253,6 +265,14 @@ export function mountLyricsView(root) {
         progress: Math.max(0, Math.min(1, (timeSec - line.t) / span)),
         progressSpan: span,
       });
+    } else if (model.lines.length) {
+      // 重播/seek 到曲首且尚未进入第一行：桌面歌词回到首行并清零进度
+      const first = model.lines[0];
+      bus.emit('desktop-lyric-sync', {
+        text: first.text || '暂无歌词',
+        progress: 0,
+        progressSpan: Math.max(0.75, Number(first.duration) || 4.8),
+      });
     }
   }
 
@@ -262,10 +282,11 @@ export function mountLyricsView(root) {
     scroller.hidden = true;
     if (!song) {
       renderModel(buildLyricModel(null));
-      setStatus('播放歌曲后显示歌词', 'empty');
+      setStatus('播放歌曲后显示歌词', 'empty', null);
       return;
     }
-    setStatus('歌词加载中…', 'loading');
+    // 桌面歌词起播先亮歌名/歌手，应用内状态仍提示加载中
+    setStatus('歌词加载中…', 'loading', song);
     try {
       const data = await fetchLyric(song);
       if (token !== loadToken) return;

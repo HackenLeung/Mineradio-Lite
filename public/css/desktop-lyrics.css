@@ -35,7 +35,8 @@ body.show { opacity: var(--lyric-opacity); }
 .stage {
   position: relative;
   max-width: calc(100vw - 24px);
-  padding: 48px 64px 40px;
+  /* 上方留足锁定按钮命中区 */
+  padding: 64px 80px 44px;
   pointer-events: auto;
   cursor: default;
 }
@@ -69,33 +70,61 @@ body.unlocked .stage { cursor: move; }
   text-shadow: 0 0 8px rgba(156, 255, 223, 0.28);
 }
 body.paused .line { opacity: 0.84; }
+
+/* 默认隐藏；悬停歌词区域时显示锁定/关闭（加大命中面积） */
 .lock-hint {
   position: absolute;
   left: 50%;
-  top: 8px;
+  top: 12px;
   transform: translateX(-50%);
   display: flex;
-  gap: 8px;
+  gap: 2px;
   align-items: center;
-  padding: 4px 10px;
+  padding: 8px;
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.22);
-  background: rgba(4, 6, 10, 0.5);
-  color: rgba(255, 255, 255, 0.88);
-  font: 700 12px/1 "Microsoft YaHei", sans-serif;
-  opacity: 0.92;
+  background: rgba(4, 6, 10, 0.82);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+  color: rgba(255, 255, 255, 0.96);
+  font: 700 13px/1 "Microsoft YaHei", sans-serif;
+  opacity: 0;
   pointer-events: none;
+  transition: opacity .12s ease;
+  z-index: 20;
 }
-body.unlocked .lock-hint { pointer-events: auto; }
+/* 仅在 controls-visible（已打开 pointer capture）时显示并可点，避免看得见点不着 */
+body.controls-visible .lock-hint,
+.lock-hint:focus-within {
+  opacity: 1;
+  pointer-events: auto;
+}
+.lyrics-lock,
 .lyrics-close {
-  display: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 84px;
+  height: 40px;
+  padding: 0 16px;
   border: 0;
-  border-left: 1px solid rgba(255, 255, 255, 0.18);
-  padding: 0 0 0 8px;
-  margin: 0;
+  border-radius: 999px;
   background: transparent;
-  color: rgba(255, 255, 255, 0.86);
+  color: rgba(255, 255, 255, 0.96);
   font: inherit;
   cursor: pointer;
+  -webkit-app-region: no-drag;
+  touch-action: manipulation;
 }
-body.unlocked .lyrics-close { display: inline-flex; }
+.lyrics-lock:hover,
+.lyrics-close:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+.lyrics-close {
+  border-left: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 0 999px 999px 0;
+  min-width: 64px;
+}
+body.unlocked .lyrics-lock {
+  color: #9ef0e0;
+}

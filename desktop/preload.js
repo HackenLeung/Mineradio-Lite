@@ -24,6 +24,20 @@ contextBridge.exposeInMainWorld('desktopWindow', {
     ipcRenderer.on('mineradio-tray-command', listener);
     return () => ipcRenderer.removeListener('mineradio-tray-command', listener);
   },
+  setCubeRemoteEnabled: (enabled, payload) => ipcRenderer.invoke('mineradio-cube-remote-set-enabled', !!enabled, payload || {}),
+  updateCubeRemote: (payload) => ipcRenderer.invoke('mineradio-cube-remote-update', payload || {}),
+  onCubeRemoteCommand: (callback) => {
+    if (typeof callback !== 'function') return () => {};
+    const listener = (_event, payload) => callback(payload || {});
+    ipcRenderer.on('mineradio-cube-remote-command', listener);
+    return () => ipcRenderer.removeListener('mineradio-cube-remote-command', listener);
+  },
+  onCubeRemoteEnabledState: (callback) => {
+    if (typeof callback !== 'function') return () => {};
+    const listener = (_event, payload) => callback(payload || {});
+    ipcRenderer.on('mineradio-cube-remote-enabled-state', listener);
+    return () => ipcRenderer.removeListener('mineradio-cube-remote-enabled-state', listener);
+  },
   exportJsonFile: (payload) => ipcRenderer.invoke('mineradio-export-json-file', payload || {}),
   importJsonFile: () => ipcRenderer.invoke('mineradio-import-json-file'),
   chooseLocalMusicFolder: () => ipcRenderer.invoke('mineradio-local-music-choose-folder'),

@@ -34,6 +34,7 @@ export function mountPlayerView(root) {
   const btnQuality = root.querySelector('#btn-quality');
   const qualityPop = root.querySelector('#quality-pop');
   const transportMeta = root.querySelector('.transport-meta');
+  const bottombar = document.querySelector('.bottombar');
   const btnRate = root.querySelector('#btn-rate');
   const ratePop = root.querySelector('#rate-pop');
   const rateSlider = root.querySelector('#rate-slider');
@@ -43,6 +44,15 @@ export function mountPlayerView(root) {
   const bgB = root.querySelector('#bg-b');
 
   let frontIsA = true;
+
+  function syncBottombar(s) {
+    const hasNow = !!(s && s.now);
+    document.body.classList.toggle('has-now', hasNow);
+    if (bottombar) {
+      bottombar.hidden = !hasNow;
+      bottombar.setAttribute('aria-hidden', hasNow ? 'false' : 'true');
+    }
+  }
 
   function setCover(url) {
     const next = frontIsA ? imgB : imgA;
@@ -78,6 +88,7 @@ export function mountPlayerView(root) {
 
   function renderMeta(s) {
     const song = s.now;
+    syncBottombar(s);
     titleEl.textContent = song ? (song.name || '未知歌曲') : '尚未播放';
     subEl.textContent = song
       ? [song.artist, song.album].filter(Boolean).join(' · ') || '选择一首歌开始'
@@ -91,9 +102,25 @@ export function mountPlayerView(root) {
     }
     btnPlay.setAttribute('aria-label', s.playing ? '暂停' : '播放');
     btnPlay.dataset.playing = s.playing ? '1' : '0';
+    const mode = s.playMode || 'order';
     const modeLabels = { order: '顺序播放', loop: '列表循环', single: '单曲循环', shuffle: '随机播放' };
-    btnMode.dataset.mode = s.playMode;
-    btnMode.title = modeLabels[s.playMode] || '播放模式';
+    // 同步 class 与 data-mode，供 CSS/图标切换
+    btnMode.classList.remove('mode-order', 'mode-loop', 'mode-single', 'mode-shuffle');
+    btnMode.classList.add(`mode-${mode}`);
+    btnMode.dataset.mode = mode;
+    btnMode.title = modeLabels[mode] || '播放模式';
+    btnMode.setAttribute('aria-label', modeLabels[mode] || '播放模式');
+    const modePath = btnMode.querySelector('svg path');
+    if (modePath) {
+      // 各模式使用不同 path，点击后图标应立刻变化
+      const MODE_PATHS = {
+        order: 'M4 6h12M4 12h16M4 18h10',
+        loop: 'M17 2l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 22l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3',
+        single: 'M17 2l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 22l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3M12 9v6',
+        shuffle: 'M16 3h5v5M4 20l7-7M21 3l-8 8M16 21h5v-5M4 4l5 5',
+      };
+      modePath.setAttribute('d', MODE_PATHS[mode] || MODE_PATHS.order);
+    }
     if (!seeking) {
       const dur = s.duration || 0;
       const cur = s.currentTime || 0;

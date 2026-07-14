@@ -97,6 +97,14 @@ export const store = {
     bus.emit('store', state);
     bus.emit('play-request', state.now);
   },
+  /** 仅同步当前索引/曲目，不触发重新拉流（智能过渡 handoff 用） */
+  adoptIndex(idx, song) {
+    if (idx < 0 || idx >= state.queue.length) return;
+    state.currentIdx = idx;
+    state.now = song || state.queue[idx] || null;
+    bus.emit('store', state);
+    bus.emit('queue', state);
+  },
   current() {
     return state.currentIdx >= 0 ? state.queue[state.currentIdx] : null;
   },

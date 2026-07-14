@@ -33,20 +33,15 @@
   border: 0;
   border-radius: 16px;
   background: transparent;
-  scrollbar-width: none;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* old Edge */
   mask-image: linear-gradient(180deg, transparent 0%, #000 11%, #000 89%, transparent 100%);
   -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 11%, #000 89%, transparent 100%);
 }
-.lyrics-scroller:hover,
-.lyrics-scroller.is-browsing { scrollbar-width: thin; }
-.lyrics-scroller::-webkit-scrollbar { width: 0; }
-.lyrics-scroller:hover::-webkit-scrollbar,
-.lyrics-scroller.is-browsing::-webkit-scrollbar { width: 3px; }
-.lyrics-scroller::-webkit-scrollbar-track { background: transparent; }
-.lyrics-scroller::-webkit-scrollbar-thumb {
-  border-radius: 999px;
-  background: rgba(255,255,255,.15);
-}
+/* 永久隐藏歌词滚动条（仍可用滚轮/触控滚动） */
+.lyrics-scroller::-webkit-scrollbar { width: 0; height: 0; display: none; }
+.lyrics-scroller::-webkit-scrollbar-track,
+.lyrics-scroller::-webkit-scrollbar-thumb { display: none; background: transparent; }
 .lyrics-spacer { width: 1px; min-height: 0; pointer-events: none; }
 
 .lyric-row {

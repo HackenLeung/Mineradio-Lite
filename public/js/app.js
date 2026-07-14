@@ -15,6 +15,7 @@ import { mountLibrary } from './ui/library.js';
 import { mountSettings } from './ui/settings.js';
 import { mountSongActions } from './ui/song-actions.js';
 import { mountDesktopLyricsController } from './ui/desktop-lyrics-controller.js';
+import { mountCubeRemoteController } from './ui/cube-remote-controller.js';
 
 function boot() {
   player.init();
@@ -28,6 +29,7 @@ function boot() {
   mountLibrary();
   mountSettings();
   mountDesktopLyricsController();
+  mountCubeRemoteController();
   mountSongActions();
 
   fetchAppVersion()

@@ -44,6 +44,18 @@ export const desktop = {
   onDesktopLyricsLockState(cb) {
     return api()?.onDesktopLyricsLockState?.(cb) || (() => {});
   },
+  setCubeRemoteEnabled(enabled, payload) {
+    return api()?.setCubeRemoteEnabled?.(enabled, payload);
+  },
+  updateCubeRemote(payload) {
+    return api()?.updateCubeRemote?.(payload);
+  },
+  onCubeRemoteCommand(cb) {
+    return api()?.onCubeRemoteCommand?.(cb) || (() => {});
+  },
+  onCubeRemoteEnabledState(cb) {
+    return api()?.onCubeRemoteEnabledState?.(cb) || (() => {});
+  },
   onTrayCommand(cb) {
     return api()?.onTrayCommand?.(cb) || (() => {});
   },
