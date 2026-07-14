@@ -1,4 +1,4 @@
-import { fetchDiscoverHome, fetchLoginStatus, fetchPlaylistTracks, fetchPodcastPrograms, coverUrl } from '../core/api.js';
+import { fetchArtistDetail, fetchDiscoverHome, fetchListenRanking, fetchPlaylistTracks, fetchPodcastPrograms, coverUrl } from '../core/api.js';
 import { store } from '../core/store.js';
 import { player } from '../core/player.js';
 import { bus } from '../core/bus.js';
@@ -22,7 +22,13 @@ function songButton(song, index, mode = 'play') {
   const img = document.createElement('img');
   img.className = 'cover'; img.alt = ''; img.loading = 'lazy'; img.src = normalized.cover ? coverUrl(normalized.cover, 80) : '';
   const meta = text('div', 'meta', '');
-  meta.append(text('div', 'name', normalized.name || '未知歌曲'), text('div', 'artist', normalized.artist || normalized.album || ''));
+  const artist = text('div', 'artist', normalized.artist || normalized.album || '');
+  if (normalized.artistId && normalized.provider !== 'kugou') {
+    artist.classList.add('artist-link'); artist.tabIndex = 0; artist.setAttribute('role', 'button');
+    artist.addEventListener('click', (event) => { event.stopPropagation(); openArtist(normalized); });
+    artist.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.stopPropagation(); openArtist(normalized); } });
+  }
+  meta.append(text('div', 'name', normalized.name || '未知歌曲'), artist);
   button.append(img, meta, text('div', 'dur', String(index + 1).padStart(2, '0')));
   button.addEventListener('click', () => {
     if (mode === 'replace' && homeData?.dailySongs) {
@@ -88,11 +94,12 @@ function detailHero(item, kind, count) {
   hero.append(img, copy); return hero;
 }
 
-async function openPlaylist(item) {
+export async function openPlaylist(item) {
   const host = document.getElementById('detail-content'); clear(host); host.append(text('div', 'loading', '正在读取歌单…'));
   bus.emit('navigate', 'detail');
   try {
-    const data = await fetchPlaylistTracks(item.id);
+    const provider = item.provider === 'kugou' ? 'kugou' : 'netease';
+    const data = await fetchPlaylistTracks(item.id, provider);
     const songs = (data.tracks || []).map(normalizeSong);
     const playlist = data.playlist || {};
     const meta = {
@@ -113,6 +120,28 @@ async function openPlaylist(item) {
   } catch (error) { clear(host); host.append(text('div', 'error-line', error.message || '歌单读取失败')); }
 }
 
+export async function openArtist(song) {
+  if (!song?.artistId) { toast('当前歌曲没有可用的歌手主页'); return; }
+  const host = document.getElementById('detail-content'); clear(host); host.append(text('div', 'loading', '正在读取歌手主页…'));
+  bus.emit('navigate', 'detail');
+  try {
+    const data = await fetchArtistDetail(song.artistId, 48);
+    const artist = data.artist || {};
+    const songs = (data.songs || []).map(normalizeSong);
+    const meta = { name: artist.name || song.artist, cover: artist.avatar || song.cover };
+    clear(host); host.append(detailHero(meta, 'ARTIST', `${songs.length} 首热门歌曲`));
+    if (artist.brief) host.append(text('p', 'detail-description', artist.brief));
+    if (songs.length) {
+      const playAll = text('button', 'chip active', '播放热门歌曲'); playAll.type = 'button';
+      playAll.addEventListener('click', () => { store.setQueue(songs, 0); store.playAt(0); bus.emit('navigate', 'player'); });
+      host.appendChild(playAll);
+    }
+    const list = document.createElement('div'); list.className = 'result-list song-list';
+    songs.forEach((item, index) => list.appendChild(songButton(item, index)));
+    host.appendChild(list);
+  } catch (error) { clear(host); host.append(text('div', 'error-line', error.message || '歌手主页读取失败')); }
+}
+
 async function openPodcast(item) {
   const host = document.getElementById('detail-content'); clear(host); host.append(text('div', 'loading', '正在读取播客节目…'));
   bus.emit('navigate', 'detail');
@@ -130,22 +159,34 @@ async function loadHome() {
   const summary = document.getElementById('home-summary'); summary.textContent = '正在读取你的音乐内容…';
   try { renderHome(await fetchDiscoverHome()); }
   catch (error) { summary.textContent = error.message || '首页内容读取失败'; renderHome({ loggedIn: false }); }
+}
+
+async function loadRanking(type = 'week') {
+  const host = document.getElementById('home-ranking'); clear(host);
   try {
-    const status = await fetchLoginStatus();
-    const account = document.getElementById('account-state');
-    account.textContent = status?.loggedIn ? (status.nickname || '已登录') : '未登录';
-  } catch (_) {}
+    const data = await fetchListenRanking(type);
+    const songs = data.songs || [];
+    show('home-ranking-section', songs.length > 0);
+    songs.slice(0, 10).forEach((song, index) => host.appendChild(songButton(song, index)));
+  } catch (_) { show('home-ranking-section', false); }
 }
 
 export function mountHome() {
   const hour = new Date().getHours();
   document.getElementById('home-greeting').textContent = hour < 6 ? '夜深了' : hour < 12 ? '早上好' : hour < 18 ? '下午好' : '晚上好';
   document.getElementById('home-refresh')?.addEventListener('click', loadHome);
+  document.getElementById('ranking-week')?.addEventListener('click', () => {
+    document.getElementById('ranking-week').classList.add('active'); document.getElementById('ranking-all').classList.remove('active'); loadRanking('week');
+  });
+  document.getElementById('ranking-all')?.addEventListener('click', () => {
+    document.getElementById('ranking-all').classList.add('active'); document.getElementById('ranking-week').classList.remove('active'); loadRanking('all');
+  });
   document.getElementById('play-daily')?.addEventListener('click', () => {
     const songs = (homeData?.dailySongs || []).map(normalizeSong); if (!songs.length) return;
     store.setQueue(songs, 0); store.playAt(0); bus.emit('navigate', 'player'); toast(`已载入 ${songs.length} 首每日推荐`);
   });
   document.getElementById('clear-search-history')?.addEventListener('click', () => { localStorage.removeItem('mineradio-lite-search-history'); renderHistory(); });
   bus.on('search-history-changed', renderHistory);
-  renderHistory(); loadHome();
+  bus.on('account-changed', () => { loadHome(); loadRanking('week'); });
+  renderHistory(); loadHome(); loadRanking('week');
 }

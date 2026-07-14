@@ -20,6 +20,12 @@ export const desktop = {
   toggleFullscreen() {
     return api()?.toggleFullscreen?.();
   },
+  openMusicLogin(provider) {
+    return provider === 'kugou' ? api()?.openKugouMusicLogin?.() : api()?.openNeteaseMusicLogin?.();
+  },
+  clearMusicLogin(provider) {
+    return provider === 'kugou' ? api()?.clearKugouMusicLogin?.() : api()?.clearNeteaseMusicLogin?.();
+  },
   updateTrayPlayback(payload) {
     return api()?.updateTrayPlayback?.(payload);
   },

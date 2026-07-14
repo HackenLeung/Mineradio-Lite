@@ -16,6 +16,24 @@ async function getJson(url) {
   return data;
 }
 
+async function postJson(url, body) {
+  const res = await fetch(url, {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body || {}),
+  });
+  let data = null;
+  try { data = await res.json(); } catch (_) { data = null; }
+  if (!res.ok) {
+    const err = new Error((data && (data.message || data.error)) || (`HTTP_${res.status}`));
+    err.status = res.status;
+    err.data = data;
+    throw err;
+  }
+  return data;
+}
+
 export function coverUrl(upstream, size) {
   if (!upstream) return '';
   let u = String(upstream);
@@ -39,12 +57,50 @@ export async function fetchDiscoverHome() {
   return getJson('/api/discover/home');
 }
 
-export async function fetchLoginStatus() {
-  return getJson(`/api/login/status?t=${Date.now()}`);
+export async function fetchLoginStatus(provider = 'netease') {
+  const path = provider === 'kugou' ? '/api/kugou/login/status' : '/api/login/status';
+  return getJson(`${path}?t=${Date.now()}`);
 }
 
-export async function fetchPlaylistTracks(id) {
-  return getJson(`/api/playlist/tracks?id=${encodeURIComponent(id)}`);
+export async function createLoginQr(provider = 'netease') {
+  if (provider === 'kugou') return getJson(`/api/kugou/login/qr/key?t=${Date.now()}`);
+  const keyData = await getJson('/api/login/qr/key');
+  if (!keyData || !keyData.key) throw new Error('LOGIN_QR_KEY_MISSING');
+  const imageData = await getJson(`/api/login/qr/create?key=${encodeURIComponent(keyData.key)}`);
+  return { key: keyData.key, img: imageData && imageData.img };
+}
+
+export async function checkLoginQr(provider, key) {
+  const path = provider === 'kugou' ? '/api/kugou/login/qr/check' : '/api/login/qr/check';
+  return getJson(`${path}?key=${encodeURIComponent(key)}&t=${Date.now()}`);
+}
+
+export async function saveLoginCookie(provider, cookie) {
+  const path = provider === 'kugou' ? '/api/kugou/login/cookie' : '/api/login/cookie';
+  return postJson(path, { cookie });
+}
+
+export async function logoutProvider(provider = 'netease') {
+  return getJson(provider === 'kugou' ? '/api/kugou/logout' : '/api/logout');
+}
+
+export async function fetchUserPlaylists(provider = 'netease') {
+  const path = provider === 'kugou' ? '/api/kugou/user/playlists' : '/api/user/playlists';
+  return getJson(`${path}?t=${Date.now()}`);
+}
+
+export async function fetchPlaylistTracks(id, provider = 'netease') {
+  const path = provider === 'kugou' ? '/api/kugou/playlist/tracks' : '/api/playlist/tracks';
+  return getJson(`${path}?id=${encodeURIComponent(id)}`);
+}
+
+export async function fetchArtistDetail(id, limit = 36) {
+  const q = new URLSearchParams({ id: String(id || ''), limit: String(limit) });
+  return getJson(`/api/artist/detail?${q}`);
+}
+
+export async function fetchListenRanking(type = 'week') {
+  return getJson(`/api/listen/ranking?type=${type === 'all' ? 'all' : 'week'}&t=${Date.now()}`);
 }
 
 export async function fetchPodcastPrograms(id, limit = 30) {

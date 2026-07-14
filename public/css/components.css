@@ -75,6 +75,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.song-item .artist-link:hover,
+.song-item .artist-link:focus { color: var(--accent-2); outline: none; text-decoration: underline; }
 .song-item .dur {
   font-size: 11px;
   color: var(--fg-mute);

@@ -31,6 +31,7 @@ function normalizeSong(raw, provider) {
     name: raw.name || '未知歌曲',
     artist: raw.artist || (Array.isArray(raw.artists) ? raw.artists.map((a) => a.name).join(' / ') : ''),
     artists: raw.artists,
+    artistId: raw.artistId || (Array.isArray(raw.artists) && raw.artists[0] && raw.artists[0].id),
     album: raw.album || '',
     cover: raw.cover || raw.al?.picUrl || '',
     duration: Number(raw.duration || raw.dt || 0) || 0,
@@ -50,6 +51,8 @@ export function mountTitlebar(root) {
     tabKg.classList.toggle('active', p === 'kugou');
   }
   syncTabs();
+  bus.on('active-account-changed', syncTabs);
+  bus.on('search-provider-changed', syncTabs);
 
   tabNet.addEventListener('click', () => {
     store.patch({ searchProvider: 'netease' });

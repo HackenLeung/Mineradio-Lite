@@ -27,7 +27,7 @@
         <button type="button" data-provider="netease" class="active">NE</button>
         <button type="button" data-provider="kugou">KG</button>
       </div>
-      <div id="account-state" class="account-pill" title="账号状态">未登录</div>
+      <button type="button" id="account-state" class="account-pill" title="账号">登录</button>
       <div class="win-controls">
         <button type="button" id="btn-min" title="最小化">─</button><button type="button" id="btn-max" title="最大化">□</button><button type="button" id="btn-close" class="close" title="关闭">×</button>
       </div>
@@ -39,6 +39,7 @@
           <button type="button" class="nav-item active" data-route="home"><span>⌂</span>首页</button>
           <button type="button" class="nav-item" data-route="player"><span>♫</span>正在播放</button>
           <button type="button" class="nav-item" data-route="search"><span>⌕</span>搜索</button>
+          <button type="button" class="nav-item" data-route="library"><span>▤</span>我的歌单</button>
         </nav>
         <div class="side-section-title"><span>当前队列</span><span id="queue-count">0 首</span></div>
         <div id="queue-list" class="side-body song-list" data-mode="queue"></div>
@@ -52,8 +53,9 @@
             <section id="home-history-section" class="content-section" hidden><div class="section-head"><h2>最近搜索</h2><button type="button" id="clear-search-history">清空</button></div><div id="search-history" class="keyword-row"></div></section>
             <section id="home-daily-section" class="content-section" hidden><div class="section-head"><h2>每日推荐</h2><button type="button" id="play-daily">播放全部</button></div><div id="home-daily" class="track-grid"></div></section>
             <section id="home-playlists-section" class="content-section" hidden><div class="section-head"><h2>为你推荐的歌单</h2></div><div id="home-playlists" class="card-grid"></div></section>
+            <section id="home-ranking-section" class="content-section" hidden><div class="section-head"><h2>我的听歌排行</h2><div class="inline-tabs"><button type="button" id="ranking-week" class="active">最近一周</button><button type="button" id="ranking-all">全部时间</button></div></div><div id="home-ranking" class="track-grid"></div></section>
             <section id="home-podcasts-section" class="content-section" hidden><div class="section-head"><h2>热门播客</h2></div><div id="home-podcasts" class="card-grid"></div></section>
-            <div id="home-empty" class="home-empty" hidden><strong>登录后同步每日推荐和私人歌单</strong><span>未登录也可以直接搜索网易云或酷狗曲库；你的搜索记录会保存在本机。</span></div>
+            <div id="home-empty" class="home-empty" hidden><strong>登录后同步每日推荐和私人歌单</strong><span>未登录也可以直接搜索网易云或酷狗曲库；你的搜索记录会保存在本机。</span><button type="button" id="home-login" class="chip active">登录账号</button></div>
           </div>
         </section>
 
@@ -63,6 +65,16 @@
 
         <section id="detail-view" class="page-view" data-view="detail" aria-label="内容详情">
           <div class="page-scroll"><button type="button" id="detail-back" class="back-btn">← 返回</button><div id="detail-content"></div></div>
+        </section>
+
+        <section id="library-view" class="page-view" data-view="library" aria-label="我的歌单">
+          <div class="page-scroll">
+            <div class="page-heading"><div><span class="eyebrow">MY LIBRARY</span><h1>我的歌单</h1><p id="library-status">登录后同步创建和收藏的歌单</p></div><button type="button" id="library-refresh" class="chip">刷新</button></div>
+            <div id="library-providers" class="provider-switch"><button type="button" data-library-provider="netease">网易云</button><button type="button" data-library-provider="kugou">酷狗</button></div>
+            <div id="library-empty" class="home-empty" hidden></div>
+            <section id="library-created-section" class="content-section" hidden><div class="section-head"><h2>我创建的歌单</h2></div><div id="library-created" class="card-grid"></div></section>
+            <section id="library-saved-section" class="content-section" hidden><div class="section-head"><h2>我收藏的歌单</h2></div><div id="library-saved" class="card-grid"></div></section>
+          </div>
         </section>
 
         <section class="stage page-view" id="player-view" data-view="player" aria-label="正在播放">
@@ -80,6 +92,24 @@
       <div class="transport-center"><div class="transport-btns"><button type="button" id="btn-mode" class="icon-btn" title="播放模式">➡</button><button type="button" id="btn-prev" class="icon-btn" title="上一首">⏮</button><button type="button" id="btn-play" class="icon-btn primary" title="播放/暂停">▶</button><button type="button" id="btn-next" class="icon-btn" title="下一首">⏭</button></div><div class="progress-row"><span id="time-cur" class="time">0:00</span><input id="seek" class="slider" type="range" min="0" max="0" value="0" step="0.1" /><span id="time-dur" class="time">0:00</span></div></div>
       <div class="transport-extra"><button type="button" id="btn-mute" class="icon-btn" title="静音">🔊</button><div class="volume-wrap"><input id="volume" class="slider" type="range" min="0" max="1" step="0.01" value="0.85" /></div><div class="quality-menu"><button type="button" id="btn-quality" class="chip" title="音质">音质</button><div id="quality-pop" class="quality-pop"></div></div></div>
     </footer>
+  </div>
+  <div id="login-modal" class="modal-mask" hidden>
+    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="login-title">
+      <div class="modal-head"><div><span class="eyebrow">ACCOUNT LOGIN</span><h2 id="login-title">登录账号</h2></div><button type="button" id="login-close" class="modal-close" aria-label="关闭">×</button></div>
+      <div class="provider-switch"><button type="button" id="login-provider-netease" data-login-provider="netease">网易云</button><button type="button" id="login-provider-kugou" data-login-provider="kugou">酷狗</button></div>
+      <div class="qr-shell"><img id="login-qr" alt="登录二维码" /><div id="login-qr-placeholder">正在生成二维码…</div></div>
+      <p id="login-status" class="modal-status" aria-live="polite">请选择平台</p>
+      <div class="modal-actions"><button type="button" id="login-web" class="chip active">官方网页登录</button><button type="button" id="login-refresh" class="chip">刷新二维码</button></div>
+    </section>
+  </div>
+
+  <div id="account-modal" class="modal-mask" hidden>
+    <section class="modal-card account-card" role="dialog" aria-modal="true" aria-labelledby="account-title">
+      <div class="modal-head"><div><span class="eyebrow">ACCOUNT</span><h2 id="account-title">账号中心</h2></div><button type="button" id="account-close" class="modal-close" aria-label="关闭">×</button></div>
+      <div id="account-providers" class="provider-switch"><button type="button" data-account-provider="netease">网易云</button><button type="button" data-account-provider="kugou">酷狗</button></div>
+      <div class="account-profile"><img id="account-avatar" alt="" /><div><strong id="account-name">未登录</strong><span id="account-vip">普通用户</span></div></div>
+      <div class="modal-actions"><button type="button" id="account-add" class="chip">登录另一平台</button><button type="button" id="account-logout" class="chip danger">退出当前账号</button></div>
+    </section>
   </div>
   <div id="toast-host" class="toast-host"></div>
   <script type="module" src="/js/app.js"></script>

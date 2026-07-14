@@ -21,8 +21,8 @@ function classList() {
   const names = new Set();
   return { toggle(name, on) { on ? names.add(name) : names.delete(name); }, contains(name) { return names.has(name); } };
 }
-const views = ['home', 'search', 'detail', 'player'].map((route) => ({ route, classList: classList() }));
-const nav = ['home', 'search', 'player'].map((route) => ({ dataset: { route }, classList: classList(), addEventListener() {} }));
+const views = ['home', 'search', 'library', 'detail', 'player'].map((route) => ({ route, classList: classList() }));
+const nav = ['home', 'search', 'library', 'player'].map((route) => ({ dataset: { route }, classList: classList(), addEventListener() {} }));
 let backHandler = null;
 globalThis.document = {
   querySelector(selector) {

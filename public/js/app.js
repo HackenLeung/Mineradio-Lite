@@ -10,6 +10,8 @@ import { mountPlayerView } from './ui/player-view.js';
 import { mountLyricsView } from './lyrics/view.js';
 import { mountShell } from './ui/shell.js';
 import { mountHome } from './ui/home.js';
+import { mountAccount } from './ui/account.js';
+import { mountLibrary } from './ui/library.js';
 
 function boot() {
   player.init();
@@ -18,7 +20,9 @@ function boot() {
   mountSide(document.getElementById('side'));
   mountPlayerView(document.getElementById('app'));
   mountLyricsView(document.getElementById('lyrics-panel'));
+  mountAccount();
   mountHome();
+  mountLibrary();
 
   fetchAppVersion()
     .then((v) => {
