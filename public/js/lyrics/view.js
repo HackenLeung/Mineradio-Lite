@@ -1,9 +1,8 @@
 /**
  * 纯 DOM 滚动歌词视图。
- * - timeupdate / seek / 切歌驱动，不用常驻 rAF
- * - 当前行高亮 + scrollIntoView 平滑滚动
- * - 点击行 seek
- * - yrc 逐字用 CSS 渐变宽度（无 canvas）
+ * - 当前行只在索引变化或明确校准时滚到容器 48% 焦点线
+ * - 仅使用歌词容器 scrollTo，不影响外层页面
+ * - timeupdate 只更新逐字进度，不启动常驻 rAF
  */
 import { bus } from '../core/bus.js';
 import { store } from '../core/store.js';
@@ -11,50 +10,139 @@ import { player } from '../core/player.js';
 import { fetchLyric } from '../core/api.js';
 import { buildLyricModel, currentLineIndex } from './parse.js';
 
+const FOCUS_RATIO = 0.48;
+const MANUAL_FOLLOW_DELAY = 3000;
+const META_LINE_RE = /^(?:作词|作曲|编曲|制作人|制片人|和声|录音|混音|母带|封面|词|曲)\s*[:：]/i;
+
+export function calculateLyricScrollTop(offsetTop, offsetHeight, viewportHeight) {
+  return Number(offsetTop || 0) - Number(viewportHeight || 0) * FOCUS_RATIO + Number(offsetHeight || 0) / 2;
+}
+
+export function isLyricMetadata(text) {
+  return META_LINE_RE.test(String(text || '').trim());
+}
+
+export function shouldCenterLyric(previousIndex, nextIndex, autoFollow, forceScroll) {
+  return !!forceScroll || (!!autoFollow && previousIndex !== nextIndex);
+}
+
 export function mountLyricsView(root) {
   const scroller = root.querySelector('#lyrics-scroller');
   const statusEl = root.querySelector('#lyrics-status');
   const toggleTrans = root.querySelector('#btn-toggle-trans');
   if (!scroller) return;
 
+  const returnButton = document.createElement('button');
+  returnButton.type = 'button';
+  returnButton.className = 'lyrics-return';
+  returnButton.textContent = '回到当前歌词';
+  returnButton.hidden = true;
+  root.appendChild(returnButton);
+
   let model = buildLyricModel(null);
   let rowEls = [];
   let activeIdx = -1;
   let showTrans = true;
   let loadToken = 0;
-  let userScrollUntil = 0;
+  let autoFollow = true;
+  let manualFollowTimer = 0;
+  let resizeTimer = 0;
+  let programmaticScrollUntil = 0;
+  let topSpacer = null;
+  let bottomSpacer = null;
 
-  scroller.addEventListener(
-    'wheel',
-    () => {
-      userScrollUntil = performance.now() + 2800;
-    },
-    { passive: true }
-  );
-  scroller.addEventListener(
-    'pointerdown',
-    () => {
-      userScrollUntil = performance.now() + 2800;
-    },
-    { passive: true }
-  );
+  function setBrowsing(browsing) {
+    autoFollow = !browsing;
+    scroller.classList.toggle('is-browsing', browsing);
+    returnButton.hidden = !browsing || !rowEls.length;
+  }
+
+  function clearManualTimer() {
+    if (manualFollowTimer) {
+      window.clearTimeout(manualFollowTimer);
+      manualFollowTimer = 0;
+    }
+  }
+
+  function centerActive(behavior = 'smooth') {
+    const row = rowEls[activeIdx];
+    if (!row) return;
+    const target = calculateLyricScrollTop(row.offsetTop, row.offsetHeight, scroller.clientHeight);
+    const max = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+    programmaticScrollUntil = performance.now() + (behavior === 'smooth' ? 900 : 120);
+    scroller.scrollTo({ top: Math.max(0, Math.min(max, target)), behavior });
+  }
+
+  function resumeAutoFollow(behavior = 'smooth') {
+    clearManualTimer();
+    setBrowsing(false);
+    centerActive(behavior);
+  }
+
+  function markManualBrowsing() {
+    if (!rowEls.length) return;
+    clearManualTimer();
+    setBrowsing(true);
+    manualFollowTimer = window.setTimeout(() => {
+      manualFollowTimer = 0;
+      resumeAutoFollow('smooth');
+    }, MANUAL_FOLLOW_DELAY);
+  }
+
+  scroller.addEventListener('wheel', markManualBrowsing, { passive: true });
+  scroller.addEventListener('pointerdown', markManualBrowsing, { passive: true });
+  scroller.addEventListener('touchstart', markManualBrowsing, { passive: true });
+  scroller.addEventListener('scroll', () => {
+    if (performance.now() > programmaticScrollUntil) markManualBrowsing();
+  }, { passive: true });
+  returnButton.addEventListener('click', () => resumeAutoFollow('smooth'));
 
   function setStatus(text, kind) {
     if (!statusEl) return;
     statusEl.hidden = !text;
     statusEl.textContent = text || '';
     statusEl.dataset.kind = kind || '';
+    returnButton.hidden = true;
     if (text) bus.emit('desktop-lyric-sync', { text, progress: 0, progressSpan: 4.8 });
   }
 
   function clearRows() {
+    clearManualTimer();
+    setBrowsing(false);
     while (scroller.firstChild) scroller.removeChild(scroller.firstChild);
     rowEls = [];
     activeIdx = -1;
+    topSpacer = null;
+    bottomSpacer = null;
   }
 
-  function renderModel(m) {
-    model = m || buildLyricModel(null);
+  function updateDistanceClasses() {
+    rowEls.forEach((row, index) => {
+      const distance = activeIdx < 0 ? 3 : Math.abs(index - activeIdx);
+      row.classList.toggle('near-1', distance === 1);
+      row.classList.toggle('near-2', distance === 2);
+      row.classList.toggle('far', distance > 2);
+    });
+  }
+
+  function setActiveIndex(index) {
+    if (index === activeIdx) return false;
+    if (activeIdx >= 0 && rowEls[activeIdx]) rowEls[activeIdx].classList.remove('active');
+    activeIdx = index;
+    if (activeIdx >= 0 && rowEls[activeIdx]) rowEls[activeIdx].classList.add('active');
+    updateDistanceClasses();
+    return true;
+  }
+
+  function recalibrateSpacers() {
+    if (!topSpacer || !bottomSpacer || !rowEls.length) return;
+    const height = scroller.clientHeight;
+    topSpacer.style.height = `${Math.max(0, height * FOCUS_RATIO - rowEls[0].offsetHeight / 2)}px`;
+    bottomSpacer.style.height = `${Math.max(0, height * (1 - FOCUS_RATIO) - rowEls[rowEls.length - 1].offsetHeight / 2)}px`;
+  }
+
+  function renderModel(nextModel) {
+    model = nextModel || buildLyricModel(null);
     clearRows();
     if (toggleTrans) {
       toggleTrans.hidden = !model.hasTranslation;
@@ -68,10 +156,15 @@ export function mountLyricsView(root) {
     setStatus('', '');
     scroller.hidden = false;
     const frag = document.createDocumentFragment();
+    topSpacer = document.createElement('div');
+    topSpacer.className = 'lyrics-spacer lyrics-spacer-top';
+    frag.appendChild(topSpacer);
+
     model.lines.forEach((line, idx) => {
       const row = document.createElement('button');
       row.type = 'button';
-      row.className = 'lyric-row';
+      row.className = 'lyric-row far';
+      if (isLyricMetadata(line.text)) row.classList.add('is-meta');
       row.dataset.idx = String(idx);
       row.dataset.t = String(line.t);
 
@@ -79,85 +172,74 @@ export function mountLyricsView(root) {
       main.className = 'lyric-main';
       if (line.words && line.words.length) {
         main.classList.add('is-words');
-        // 底层全文 + 上层逐字高亮（CSS width 裁剪）
         const base = document.createElement('span');
         base.className = 'lyric-base';
         base.textContent = line.text;
         const fill = document.createElement('span');
         fill.className = 'lyric-fill';
         fill.textContent = line.text;
-        fill.style.width = '0%';
-        main.appendChild(base);
-        main.appendChild(fill);
+        main.style.setProperty('--word-progress', '0%');
+        main.append(base, fill);
       } else {
         main.textContent = line.text;
       }
 
       row.appendChild(main);
       if (model.translations[idx]) {
-        const tr = document.createElement('div');
-        tr.className = 'lyric-trans';
-        tr.textContent = model.translations[idx];
-        tr.hidden = !showTrans;
-        row.appendChild(tr);
+        const translation = document.createElement('div');
+        translation.className = 'lyric-trans';
+        translation.textContent = model.translations[idx];
+        translation.hidden = !showTrans;
+        row.appendChild(translation);
       }
 
       row.addEventListener('click', () => {
-        const t = Number(line.t) || 0;
-        // 轻微偏移，确保落在该行区间
-        player.seek(Math.max(0, t + 0.02));
-        userScrollUntil = 0;
-        sync(store.get().currentTime || t, { forceScroll: true });
+        player.seek(Math.max(0, (Number(line.t) || 0) + 0.02));
+        resumeAutoFollow('smooth');
+        sync(store.get().currentTime || line.t, { forceScroll: true });
       });
-
       frag.appendChild(row);
       rowEls.push(row);
     });
+
+    bottomSpacer = document.createElement('div');
+    bottomSpacer.className = 'lyrics-spacer lyrics-spacer-bottom';
+    frag.appendChild(bottomSpacer);
     scroller.appendChild(frag);
-    // 初始同步
-    sync(store.get().currentTime || 0, { forceScroll: true });
+    recalibrateSpacers();
+    sync(store.get().currentTime || 0, { forceScroll: true, behavior: 'auto' });
   }
 
   function wordProgress(line, timeSec) {
     if (!line.words || !line.words.length) return 0;
-    const t = timeSec;
     const full = line.text.length || 1;
     let done = 0;
     for (let i = 0; i < line.words.length; i++) {
-      const w = line.words[i];
-      if (t >= w.t + w.d) {
-        done = w.c1;
-      } else if (t >= w.t) {
-        const p = Math.min(1, Math.max(0, (t - w.t) / Math.max(0.06, w.d)));
-        done = w.c0 + (w.c1 - w.c0) * p;
+      const word = line.words[i];
+      if (timeSec >= word.t + word.d) done = word.c1;
+      else if (timeSec >= word.t) {
+        const progress = Math.min(1, Math.max(0, (timeSec - word.t) / Math.max(0.06, word.d)));
+        done = word.c0 + (word.c1 - word.c0) * progress;
         break;
       } else break;
     }
     return Math.max(0, Math.min(100, (done / full) * 100));
   }
 
-  function sync(timeSec, { forceScroll = false } = {}) {
+  function sync(timeSec, { forceScroll = false, behavior = 'smooth' } = {}) {
     if (!rowEls.length || model.status !== 'ok') return;
-    const idx = currentLineIndex(model.lines, timeSec);
-    if (idx !== activeIdx) {
-      if (activeIdx >= 0 && rowEls[activeIdx]) rowEls[activeIdx].classList.remove('active');
-      activeIdx = idx;
-      if (activeIdx >= 0 && rowEls[activeIdx]) {
-        rowEls[activeIdx].classList.add('active');
-        if (forceScroll || performance.now() > userScrollUntil) {
-          rowEls[activeIdx].scrollIntoView({ block: 'center', behavior: forceScroll ? 'auto' : 'smooth' });
-        }
-      }
-    }
-    // 逐字进度：只更新当前行 + 清空邻行
+    const index = currentLineIndex(model.lines, timeSec);
+    const previousIndex = activeIdx;
+    setActiveIndex(index);
+    if (shouldCenterLyric(previousIndex, index, autoFollow, forceScroll)) centerActive(behavior);
+
     for (let i = Math.max(0, activeIdx - 1); i <= Math.min(rowEls.length - 1, activeIdx + 1); i++) {
-      const row = rowEls[i];
-      const fill = row && row.querySelector('.lyric-fill');
-      if (!fill) continue;
-      if (i < activeIdx) fill.style.width = '100%';
-      else if (i > activeIdx) fill.style.width = '0%';
-      else fill.style.width = wordProgress(model.lines[i], timeSec).toFixed(2) + '%';
+      const main = rowEls[i]?.querySelector('.lyric-main.is-words');
+      if (!main) continue;
+      const progress = i < activeIdx ? 100 : i > activeIdx ? 0 : wordProgress(model.lines[i], timeSec);
+      main.style.setProperty('--word-progress', `${progress.toFixed(2)}%`);
     }
+
     if (activeIdx >= 0 && model.lines[activeIdx]) {
       const line = model.lines[activeIdx];
       const wordEnd = line.words?.length
@@ -188,40 +270,40 @@ export function mountLyricsView(root) {
       const data = await fetchLyric(song);
       if (token !== loadToken) return;
       renderModel(buildLyricModel(data));
-    } catch (e) {
+    } catch (error) {
       if (token !== loadToken) return;
-      renderModel(buildLyricModel(null, { error: e }));
+      renderModel(buildLyricModel(null, { error }));
     }
   }
 
-  if (toggleTrans) {
-    toggleTrans.addEventListener('click', () => {
-      showTrans = !showTrans;
-      toggleTrans.classList.toggle('active', showTrans);
-      scroller.querySelectorAll('.lyric-trans').forEach((el) => {
-        el.hidden = !showTrans;
-      });
-    });
-  }
-
-  bus.on('song-change', (song) => {
-    loadForSong(song);
-  });
-  bus.on('store', (s) => {
-    // timeupdate 经 store 推送；暂停时也同步一次（seek 后）
-    sync(s.currentTime || 0);
-  });
-  bus.on('playing-change', (playing) => {
-    if (playing) {
-      userScrollUntil = 0;
-      sync(store.get().currentTime || 0, { forceScroll: true });
-    }
-  });
-  bus.on('seek', (t) => {
-    userScrollUntil = 0;
-    sync(Number(t) || 0, { forceScroll: true });
+  toggleTrans?.addEventListener('click', () => {
+    showTrans = !showTrans;
+    toggleTrans.classList.toggle('active', showTrans);
+    scroller.querySelectorAll('.lyric-trans').forEach((element) => { element.hidden = !showTrans; });
+    window.setTimeout(() => {
+      recalibrateSpacers();
+      resumeAutoFollow('smooth');
+    }, 0);
   });
 
-  // 初始空态
+  const recalibrateAfterResize = () => {
+    window.clearTimeout(resizeTimer);
+    resizeTimer = window.setTimeout(() => {
+      recalibrateSpacers();
+      if (autoFollow) centerActive('auto');
+    }, 80);
+  };
+  if (typeof ResizeObserver === 'function') new ResizeObserver(recalibrateAfterResize).observe(scroller);
+  else window.addEventListener('resize', recalibrateAfterResize);
+
+  bus.on('song-change', loadForSong);
+  bus.on('store', (state) => sync(state.currentTime || 0));
+  bus.on('playing-change', () => sync(store.get().currentTime || 0));
+  bus.on('seek', (time) => {
+    clearManualTimer();
+    setBrowsing(false);
+    sync(Number(time) || 0, { forceScroll: true });
+  });
+
   setStatus('播放歌曲后显示歌词', 'empty');
 }
