@@ -205,6 +205,7 @@ export const player = {
     a.currentTime = Math.max(0, t);
     store.patch({ currentTime: a.currentTime });
     seeking = false;
+    bus.emit('seek', a.currentTime);
   },
   setVolume(v) {
     store.patch({ volume: Math.min(1, Math.max(0, v)), muted: false });

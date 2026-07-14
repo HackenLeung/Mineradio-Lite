@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="/css/layout.css" />
   <link rel="stylesheet" href="/css/components.css" />
   <link rel="stylesheet" href="/css/player.css" />
+  <link rel="stylesheet" href="/css/lyrics.css" />
 </head>
 <body>
   <div id="album-bg" aria-hidden="true">
@@ -56,6 +57,15 @@
           </div>
           <p id="home-hint" class="sub" style="margin-top:14px;font-size:12px;color:var(--fg-mute)"></p>
         </div>
+
+        <section class="lyrics-panel" id="lyrics-panel" aria-label="滚动歌词">
+          <div class="lyrics-toolbar">
+            <span class="label">歌词</span>
+            <button type="button" id="btn-toggle-trans" class="chip" hidden title="显示/隐藏翻译">翻译</button>
+          </div>
+          <p id="lyrics-status" class="lyrics-status">播放歌曲后显示歌词</p>
+          <div id="lyrics-scroller" class="lyrics-scroller"></div>
+        </section>
       </section>
 
       <aside id="side" class="side">

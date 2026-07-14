@@ -1,0 +1,124 @@
+/* 纯 DOM 滚动歌词 */
+.lyrics-panel {
+  width: min(560px, 92%);
+  max-height: min(34vh, 280px);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  margin-top: 4px;
+}
+.lyrics-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.lyrics-toolbar .label {
+  font-size: 11px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--fg-mute);
+  font-weight: 700;
+}
+.lyrics-scroller {
+  position: relative;
+  flex: 1;
+  min-height: 120px;
+  max-height: min(30vh, 250px);
+  overflow: auto;
+  padding: 28px 8px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: rgba(0, 0, 0, 0.18);
+  scroll-behavior: smooth;
+  mask-image: linear-gradient(180deg, transparent, #000 12%, #000 88%, transparent);
+  -webkit-mask-image: linear-gradient(180deg, transparent, #000 12%, #000 88%, transparent);
+}
+.lyrics-scroller::-webkit-scrollbar { width: 6px; }
+.lyrics-scroller::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+}
+
+.lyric-row {
+  display: block;
+  width: 100%;
+  text-align: center;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 0;
+  background: transparent;
+  color: var(--fg-mute);
+  cursor: pointer;
+  transition: color 0.2s var(--ease), transform 0.25s var(--ease), background 0.2s var(--ease);
+}
+.lyric-row:hover {
+  color: var(--fg-dim);
+  background: rgba(255, 255, 255, 0.03);
+}
+.lyric-row.active {
+  color: var(--fg);
+  transform: scale(1.06);
+  background: rgba(77, 182, 172, 0.08);
+}
+.lyric-main {
+  position: relative;
+  display: inline-block;
+  font-size: 15px;
+  line-height: 1.45;
+  font-weight: 600;
+  max-width: 100%;
+}
+.lyric-row.active .lyric-main { font-size: 17px; }
+.lyric-main.is-words {
+  /* 双层叠字：底灰 + 顶高亮裁剪 */
+}
+.lyric-main.is-words .lyric-base {
+  color: inherit;
+}
+.lyric-main.is-words .lyric-fill {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  color: var(--accent-2);
+  pointer-events: none;
+}
+.lyric-row.active .lyric-main.is-words .lyric-fill {
+  color: #e7fffb;
+  text-shadow: 0 0 18px rgba(77, 182, 172, 0.35);
+}
+.lyric-trans {
+  margin-top: 2px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--fg-mute);
+  line-height: 1.35;
+}
+.lyric-row.active .lyric-trans { color: var(--fg-dim); }
+
+.lyrics-status {
+  margin: 0;
+  padding: 28px 12px;
+  text-align: center;
+  color: var(--fg-mute);
+  font-size: 13px;
+}
+.lyrics-status[data-kind='error'] { color: var(--danger); }
+.lyrics-status[data-kind='instrumental'] { color: var(--accent-2); }
+
+/* 舞台：封面 + 歌词纵向 */
+.stage {
+  justify-content: flex-start;
+  padding-top: 18px;
+  overflow: auto;
+}
+.stage .cover-stage {
+  flex: 0 0 auto;
+}
+.stage .now-meta {
+  flex: 0 0 auto;
+}

@@ -8,6 +8,7 @@ import { fetchDiscoverHome, fetchAppVersion } from './core/api.js';
 import { mountTitlebar } from './ui/titlebar.js';
 import { mountSide } from './ui/queue.js';
 import { mountPlayerView } from './ui/player-view.js';
+import { mountLyricsView } from './lyrics/view.js';
 import { toast } from './ui/toast.js';
 
 function boot() {
@@ -15,6 +16,7 @@ function boot() {
   mountTitlebar(document.getElementById('titlebar'));
   mountSide(document.getElementById('side'));
   mountPlayerView(document.getElementById('app'));
+  mountLyricsView(document.getElementById('lyrics-panel'));
 
   // 发现首页：登出 starter / 登录后可一键把日推塞进队列
   fetchDiscoverHome()
