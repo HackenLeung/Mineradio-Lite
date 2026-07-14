@@ -34,7 +34,6 @@ export function mountPlayerView(root) {
   const btnQuality = root.querySelector('#btn-quality');
   const qualityPop = root.querySelector('#quality-pop');
   const transportMeta = root.querySelector('.transport-meta');
-  const btnLyrics = root.querySelector('#btn-lyrics');
   const btnRate = root.querySelector('#btn-rate');
   const ratePop = root.querySelector('#rate-pop');
   const rateSlider = root.querySelector('#rate-slider');
@@ -180,7 +179,6 @@ export function mountPlayerView(root) {
   transportMeta?.addEventListener('keydown', (event) => {
     if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openPlayer(); }
   });
-  btnLyrics?.addEventListener('click', openPlayer);
   btnFullscreen?.addEventListener('click', () => desktop.toggleFullscreen());
   btnRate?.addEventListener('click', (event) => {
     event.stopPropagation();

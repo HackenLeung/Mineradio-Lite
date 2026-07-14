@@ -19,6 +19,9 @@ assert.equal(store.current().id, '1', '无效 playAt 不应破坏当前歌曲');
 store.patch({ playbackRate: 1.25 });
 assert.equal(store.get().playbackRate, 1.25, '倍速状态应写入播放器状态');
 assert.equal(JSON.parse(localStorage.getItem('mineradio-lite-player')).playbackRate, 1.25, '倍速应持久化');
+assert.equal(store.get().smartTransition, true, '智能过渡应默认开启');
+store.patch({ smartTransition: false });
+assert.equal(JSON.parse(localStorage.getItem('mineradio-lite-player')).smartTransition, false, '智能过渡设置应持久化');
 
 function classList() {
   const names = new Set();

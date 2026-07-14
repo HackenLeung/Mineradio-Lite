@@ -1,5 +1,4 @@
-/* 阶段 0 桌面歌词最小测试桩样式（临时）。纯 CSS karaoke，无动画循环。
-   不代表阶段 3 完成；正式方案见 docs/desktop-lyrics-rewrite.md。 */
+/* 纯 DOM/CSS 桌面歌词样式。 */
 :root {
   --lyric-primary: #f6fdff;
   --lyric-secondary: #a8f6ff;

@@ -1,7 +1,4 @@
-// 阶段 0 桌面歌词最小测试桩（临时，非最终实现）。
-// 仅用于 IPC / 托盘解锁 / 无 canvas 验收；不代表阶段 3 完成。
-// 正式纯 DOM/CSS 重写见 docs/desktop-lyrics-rewrite.md（阶段 3 重新审查）。
-// 当前性能数字只代表本测试桩。硬约束：textContent 写入；rAF 仅 playing 时运行。
+// 纯 DOM/CSS 桌面歌词。textContent 写入；rAF 仅 playing 时运行。
 (function () {
   'use strict';
 

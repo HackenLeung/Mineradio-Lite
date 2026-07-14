@@ -15,6 +15,35 @@ let audio = null;
 let objectUrl = '';
 let loadToken = 0;
 let seeking = false;
+let transitionTimer = 0;
+let transitionResolve = null;
+
+function stopTransitionRamp(completed = false) {
+  if (transitionTimer) {
+    clearInterval(transitionTimer);
+    transitionTimer = 0;
+  }
+  const resolve = transitionResolve;
+  transitionResolve = null;
+  if (resolve) resolve(completed);
+}
+
+function rampVolume(media, target, durationMs, token) {
+  stopTransitionRamp();
+  const start = Number(media.volume) || 0;
+  const targetValue = Math.min(1, Math.max(0, Number(target) || 0));
+  const duration = Math.max(80, Number(durationMs) || 360);
+  const startedAt = performance.now();
+  return new Promise((resolve) => {
+    transitionResolve = resolve;
+    transitionTimer = window.setInterval(() => {
+      if (token !== loadToken) { stopTransitionRamp(false); return; }
+      const progress = Math.min(1, (performance.now() - startedAt) / duration);
+      media.volume = start + (targetValue - start) * progress;
+      if (progress >= 1) stopTransitionRamp(true);
+    }, 24);
+  });
+}
 
 function ensureAudio() {
   if (audio) return audio;
@@ -122,16 +151,26 @@ async function loadAndPlay(song) {
   const src = audioProxyUrl(info.url);
   const a = ensureAudio();
   applyVolume();
+  const smartTransition = !!store.get().smartTransition && !!a.src;
+  if (smartTransition && !a.paused && !a.ended) {
+    await rampVolume(a, 0, 360, token);
+    if (token !== loadToken) return;
+  }
   try {
     a.pause();
     a.src = src;
     a.playbackRate = store.get().playbackRate || 1;
+    if (smartTransition) a.volume = 0;
     a.load();
     const p = a.play();
     if (p && p.catch) await p.catch((err) => {
       toast.error('自动播放被拦截，请点击播放');
       console.warn(err);
     });
+    if (smartTransition && token === loadToken) {
+      const s = store.get();
+      rampVolume(a, s.muted ? 0 : s.volume, 560, token);
+    }
   } catch (e) {
     toast.error(e.message || '播放失败');
     return;
@@ -184,6 +223,7 @@ export const player = {
     else a.pause();
   },
   pause() {
+    stopTransitionRamp();
     ensureAudio().pause();
   },
   next(fromEnded = false) {

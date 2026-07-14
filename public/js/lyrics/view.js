@@ -44,6 +44,7 @@ export function mountLyricsView(root) {
     statusEl.hidden = !text;
     statusEl.textContent = text || '';
     statusEl.dataset.kind = kind || '';
+    if (text) bus.emit('desktop-lyric-sync', { text, progress: 0, progressSpan: 4.8 });
   }
 
   function clearRows() {
@@ -156,6 +157,20 @@ export function mountLyricsView(root) {
       if (i < activeIdx) fill.style.width = '100%';
       else if (i > activeIdx) fill.style.width = '0%';
       else fill.style.width = wordProgress(model.lines[i], timeSec).toFixed(2) + '%';
+    }
+    if (activeIdx >= 0 && model.lines[activeIdx]) {
+      const line = model.lines[activeIdx];
+      const wordEnd = line.words?.length
+        ? Math.max(...line.words.map((word) => Number(word.t || 0) + Number(word.d || 0)))
+        : 0;
+      const nextTime = model.lines[activeIdx + 1]?.t;
+      const end = wordEnd > line.t ? wordEnd : (Number(nextTime) > line.t ? Number(nextTime) : line.t + 4.8);
+      const span = Math.max(0.75, end - line.t);
+      bus.emit('desktop-lyric-sync', {
+        text: line.text || '暂无歌词',
+        progress: Math.max(0, Math.min(1, (timeSec - line.t) / span)),
+        progressSpan: span,
+      });
     }
   }
 

@@ -110,6 +110,7 @@
 }
 .icon-btn.primary:hover { filter: brightness(1.05); }
 .icon-btn svg,.round-entry svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}.icon-btn.icon-fill svg,.icon-btn.primary svg{fill:currentColor;stroke:none}.round-entry{display:inline-flex;align-items:center;justify-content:center}.round-entry svg{width:18px;height:18px}.icon-btn .pause-symbol{display:none}.icon-btn[data-playing="1"] .play-symbol{display:none}.icon-btn[data-playing="1"] .pause-symbol{display:block}.icon-btn.liked{color:#ff6f87;background:rgba(255,86,112,.1)}.icon-btn.liked svg{fill:currentColor}.lyrics-word{font-weight:800;font-size:15px}.rate-btn{height:34px;min-width:54px;padding:0 8px;border-radius:10px;color:var(--fg-dim);font-size:11px}.rate-btn:hover,.rate-btn.active{background:rgba(255,255,255,.08);color:#fff}
+.lyrics-word.active{color:#fff;background:rgba(var(--accent-rgb),.16);box-shadow:0 0 18px rgba(var(--accent-rgb),.12)}
 
 .chip {
   height: 26px;

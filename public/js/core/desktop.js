@@ -38,6 +38,12 @@ export const desktop = {
   setDesktopLyricsLock(locked) {
     return api()?.setDesktopLyricsLock?.(locked);
   },
+  onDesktopLyricsEnabledState(cb) {
+    return api()?.onDesktopLyricsEnabledState?.(cb) || (() => {});
+  },
+  onDesktopLyricsLockState(cb) {
+    return api()?.onDesktopLyricsLockState?.(cb) || (() => {});
+  },
   onTrayCommand(cb) {
     return api()?.onTrayCommand?.(cb) || (() => {});
   },

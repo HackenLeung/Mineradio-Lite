@@ -16,6 +16,7 @@ const state = {
   volume: 0.85,
   muted: false,
   playbackRate: 1,
+  smartTransition: true,
   playing: false,
   currentTime: 0,
   duration: 0,
@@ -35,6 +36,7 @@ function persist() {
       volume: state.volume,
       muted: state.muted,
       playbackRate: state.playbackRate,
+      smartTransition: state.smartTransition,
       quality: state.quality,
       playMode: state.playMode,
       searchProvider: state.searchProvider,
@@ -48,6 +50,7 @@ function restore() {
     if (typeof raw.volume === 'number') state.volume = Math.min(1, Math.max(0, raw.volume));
     if (typeof raw.muted === 'boolean') state.muted = raw.muted;
     if (typeof raw.playbackRate === 'number') state.playbackRate = Math.min(2, Math.max(0.5, raw.playbackRate));
+    if (typeof raw.smartTransition === 'boolean') state.smartTransition = raw.smartTransition;
     if (raw.quality) state.quality = raw.quality;
     if (raw.playMode) state.playMode = raw.playMode;
     if (raw.searchProvider) state.searchProvider = raw.searchProvider;
@@ -64,7 +67,7 @@ export const store = {
     bus.emit('store', state);
     if (
       partial &&
-      ('volume' in partial || 'muted' in partial || 'playbackRate' in partial || 'quality' in partial ||
+      ('volume' in partial || 'muted' in partial || 'playbackRate' in partial || 'smartTransition' in partial || 'quality' in partial ||
         'playMode' in partial || 'searchProvider' in partial)
     ) persist();
   },

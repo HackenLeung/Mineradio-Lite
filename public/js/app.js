@@ -14,6 +14,7 @@ import { mountAccount } from './ui/account.js';
 import { mountLibrary } from './ui/library.js';
 import { mountSettings } from './ui/settings.js';
 import { mountSongActions } from './ui/song-actions.js';
+import { mountDesktopLyricsController } from './ui/desktop-lyrics-controller.js';
 
 function boot() {
   player.init();
@@ -26,6 +27,7 @@ function boot() {
   mountHome();
   mountLibrary();
   mountSettings();
+  mountDesktopLyricsController();
   mountSongActions();
 
   fetchAppVersion()
