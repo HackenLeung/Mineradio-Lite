@@ -108,6 +108,27 @@ export async function fetchPodcastPrograms(id, limit = 30) {
   return getJson(`/api/podcast/programs?${q}`);
 }
 
+export async function fetchWeather() {
+  return getJson('/api/weather/current');
+}
+
+export async function fetchLikeStatus(id) {
+  return getJson(`/api/song/like/check?ids=${encodeURIComponent(id)}`);
+}
+
+export async function setSongLiked(id, liked) {
+  return getJson(`/api/song/like?id=${encodeURIComponent(id)}&like=${liked ? 'true' : 'false'}`);
+}
+
+export async function addSongToPlaylist(pid, id) {
+  return postJson('/api/playlist/add-song', { pid, id });
+}
+
+export async function fetchSongComments(id, limit = 30, offset = 0) {
+  const q = new URLSearchParams({ id: String(id || ''), limit: String(limit), offset: String(offset) });
+  return getJson(`/api/song/comments?${q}`);
+}
+
 export async function searchNetease(keywords, limit = 30) {
   const q = new URLSearchParams({ keywords: String(keywords || ''), limit: String(limit) });
   return getJson(`/api/search?${q}`);

@@ -1,4 +1,4 @@
-import { fetchArtistDetail, fetchDiscoverHome, fetchListenRanking, fetchPlaylistTracks, fetchPodcastPrograms, coverUrl } from '../core/api.js';
+import { fetchArtistDetail, fetchDiscoverHome, fetchListenRanking, fetchPlaylistTracks, fetchPodcastPrograms, fetchWeather, coverUrl } from '../core/api.js';
 import { store } from '../core/store.js';
 import { player } from '../core/player.js';
 import { bus } from '../core/bus.js';
@@ -51,6 +51,11 @@ function mediaCard(item, subtitle, onClick) {
   return button;
 }
 
+function setFeatureCover(id, cover) {
+  const node = document.getElementById(id);
+  if (node) node.style.backgroundImage = cover ? `url("${coverUrl(cover, 260)}")` : '';
+}
+
 function renderHistory() {
   const host = document.getElementById('search-history'); clear(host);
   let history = [];
@@ -79,12 +84,48 @@ function renderHome(data) {
   show('home-empty', !data?.loggedIn);
   show('home-daily-section', daily.length > 0); show('home-playlists-section', playlists.length > 0); show('home-podcasts-section', podcasts.length > 0);
 
+  document.getElementById('home-library-meta').textContent = playlists.length ? `${playlists.length} 个歌单` : '登录后同步';
+  document.getElementById('home-daily-title').textContent = daily[0]?.name || '每日推荐';
+  document.getElementById('home-daily-meta').textContent = daily.length ? `${daily.length} 首 · 点击播放今日队列` : '登录后获取';
+  document.getElementById('home-single-title').textContent = daily[1]?.name || daily[0]?.name || '等待推荐';
+  document.getElementById('home-single-meta').textContent = daily[1]?.artist || daily[0]?.artist || '今日单曲';
+  setFeatureCover('home-library-cover', playlists[0]?.cover);
+  setFeatureCover('home-daily-cover', daily[0]?.cover);
+  setFeatureCover('home-single-cover', daily[1]?.cover || daily[0]?.cover);
+  const now = store.get().now;
+  document.getElementById('home-continue-title').textContent = now?.name || '当前没有歌曲';
+  document.getElementById('home-continue-meta').textContent = now ? `${now.artist || '未知歌手'} · 当前队列 ${store.get().currentIdx + 1}/${store.get().queue.length}` : '打开正在播放';
+  setFeatureCover('home-continue-cover', now?.cover);
   const dailyHost = document.getElementById('home-daily'); clear(dailyHost);
-  daily.slice(0, 8).forEach((song, index) => dailyHost.appendChild(songButton(song, index, 'replace')));
+  daily.slice(0, 5).forEach((song, index) => dailyHost.appendChild(mediaCard(song, song.artist || '每日推荐', () => {
+    const songs = daily.map(normalizeSong); store.setQueue(songs, index); store.playAt(index); bus.emit('navigate', 'player');
+  })));
   const playlistHost = document.getElementById('home-playlists'); clear(playlistHost);
-  playlists.forEach((item) => playlistHost.appendChild(mediaCard(item, item.tag || '推荐歌单', () => openPlaylist(item))));
+  playlists.slice(0, 9).forEach((item) => playlistHost.appendChild(mediaCard(item, item.tag || item.creator || '我的歌单', () => openPlaylist(item))));
   const podcastHost = document.getElementById('home-podcasts'); clear(podcastHost);
   podcasts.forEach((item) => podcastHost.appendChild(mediaCard(item, item.djName || item.category || '播客', () => openPodcast(item))));
+}
+
+function renderClock() {
+  const now = new Date();
+  const weekdays = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
+  document.getElementById('home-date').textContent = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 ${weekdays[now.getDay()]}`;
+  document.getElementById('home-clock').textContent = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false });
+}
+
+async function loadWeather() {
+  const node = document.getElementById('home-weather');
+  try {
+    const data = await Promise.race([
+      fetchWeather(),
+      new Promise((_, reject) => window.setTimeout(() => reject(new Error('WEATHER_TIMEOUT')), 6000)),
+    ]); const weather = data?.weather;
+    const rawLocation = weather?.location;
+    const location = typeof rawLocation === 'string'
+      ? rawLocation
+      : (rawLocation?.city || rawLocation?.name || rawLocation?.label || '');
+    node.textContent = weather ? `${location}${location ? ' · ' : ''}${Math.round(Number(weather.temperature) || 0)}° · ${weather.label || ''}` : '天气暂不可用';
+  } catch (_) { node.textContent = '天气暂不可用'; }
 }
 
 function detailHero(item, kind, count) {
@@ -173,8 +214,15 @@ async function loadRanking(type = 'week') {
 
 export function mountHome() {
   const hour = new Date().getHours();
-  document.getElementById('home-greeting').textContent = hour < 6 ? '夜深了' : hour < 12 ? '早上好' : hour < 18 ? '下午好' : '晚上好';
+  const greeting = document.getElementById('home-greeting');
+  if (greeting) greeting.textContent = hour < 6 ? '夜深了' : hour < 12 ? '早上好' : hour < 18 ? '下午好' : '晚上好';
   document.getElementById('home-refresh')?.addEventListener('click', loadHome);
+  document.getElementById('home-library-card')?.addEventListener('click', () => bus.emit('navigate', 'library'));
+  document.getElementById('home-daily-card')?.addEventListener('click', () => document.getElementById('play-daily')?.click());
+  document.getElementById('home-single-card')?.addEventListener('click', () => {
+    const song = homeData?.dailySongs?.[1] || homeData?.dailySongs?.[0]; if (!song) return; player.playSong(normalizeSong(song), { enqueue: true }); bus.emit('navigate', 'player');
+  });
+  document.getElementById('home-continue-card')?.addEventListener('click', () => bus.emit('navigate', 'player'));
   document.getElementById('ranking-week')?.addEventListener('click', () => {
     document.getElementById('ranking-week').classList.add('active'); document.getElementById('ranking-all').classList.remove('active'); loadRanking('week');
   });
@@ -188,5 +236,11 @@ export function mountHome() {
   document.getElementById('clear-search-history')?.addEventListener('click', () => { localStorage.removeItem('mineradio-lite-search-history'); renderHistory(); });
   bus.on('search-history-changed', renderHistory);
   bus.on('account-changed', () => { loadHome(); loadRanking('week'); });
+  bus.on('store', (state) => {
+    document.getElementById('home-continue-title').textContent = state.now?.name || '当前没有歌曲';
+    document.getElementById('home-continue-meta').textContent = state.now ? `${state.now.artist || '未知歌手'} · 当前队列 ${state.currentIdx + 1}/${state.queue.length}` : '打开正在播放';
+    setFeatureCover('home-continue-cover', state.now?.cover);
+  });
+  renderClock(); window.setInterval(renderClock, 30000); loadWeather();
   renderHistory(); loadHome(); loadRanking('week');
 }

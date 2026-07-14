@@ -30,8 +30,9 @@
         <div class="tabs" title="搜索源"><button type="button" data-provider="netease" class="active">NE</button><button type="button" data-provider="kugou">KG</button></div>
       </div>
       <div id="top-right" class="top-right">
-        <button type="button" id="home-entry" class="round-entry" data-route="home" title="回到 Home" aria-label="回到 Home">⌂</button>
+        <button type="button" id="home-entry" class="round-entry" data-route="home" title="回到 Home" aria-label="回到 Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9h13v-9"/></svg></button>
         <button type="button" id="account-state" class="account-pill" title="账号">登录</button>
+        <button type="button" id="settings-entry" class="round-entry" data-route="settings" title="设置" aria-label="设置"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.83 2.83-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6 1.7 1.7 0 0 0-.4 1.1V21h-4v-.09A1.7 1.7 0 0 0 8.6 19.4a1.7 1.7 0 0 0-1.88.34l-.06.06-2.83-2.83.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1 1.7 1.7 0 0 0-1.1-.4H3v-4h.09A1.7 1.7 0 0 0 4.6 8.6a1.7 1.7 0 0 0-.34-1.88l-.06-.06 2.83-2.83.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6 1.7 1.7 0 0 0 .4-1.1V3h4v.09A1.7 1.7 0 0 0 15.4 4a1.7 1.7 0 0 0 1.88-.34l.06-.06 2.83 2.83-.06.06A1.7 1.7 0 0 0 19.4 9c.18.37.5.7.9.9.35.17.73.24 1.1.2h.1v4h-.09A1.7 1.7 0 0 0 19.4 15Z"/></svg></button>
         <div class="win-controls"><button type="button" id="btn-min" title="最小化">─</button><button type="button" id="btn-max" title="最大化">□</button><button type="button" id="btn-close" class="close" title="关闭">×</button></div>
       </div>
     </header>
@@ -48,14 +49,25 @@
 
       <main id="workspace" class="workspace">
         <section id="home-view" class="page-view active" data-view="home" aria-label="首页">
-          <div class="page-scroll">
-            <div class="page-heading"><div><span class="eyebrow">MINERADIO HOME</span><h1 id="home-greeting">晚上好</h1><p id="home-summary">正在读取你的音乐内容…</p></div><button type="button" id="home-refresh" class="chip">刷新</button></div>
-            <section id="home-history-section" class="content-section" hidden><div class="section-head"><h2>最近搜索</h2><button type="button" id="clear-search-history">清空</button></div><div id="search-history" class="keyword-row"></div></section>
-            <section id="home-daily-section" class="content-section" hidden><div class="section-head"><h2>每日推荐</h2><button type="button" id="play-daily">播放全部</button></div><div id="home-daily" class="track-grid"></div></section>
-            <section id="home-playlists-section" class="content-section" hidden><div class="section-head"><h2>为你推荐的歌单</h2></div><div id="home-playlists" class="card-grid"></div></section>
-            <section id="home-ranking-section" class="content-section" hidden><div class="section-head"><h2>我的听歌排行</h2><div class="inline-tabs"><button type="button" id="ranking-week" class="active">最近一周</button><button type="button" id="ranking-all">全部时间</button></div></div><div id="home-ranking" class="track-grid"></div></section>
-            <section id="home-podcasts-section" class="content-section" hidden><div class="section-head"><h2>热门播客</h2></div><div id="home-podcasts" class="card-grid"></div></section>
-            <div id="home-empty" class="home-empty" hidden><strong>登录后同步每日推荐和私人歌单</strong><span>未登录也可以直接搜索网易云或酷狗曲库；你的搜索记录会保存在本机。</span><button type="button" id="home-login" class="chip active">登录账号</button></div>
+          <div class="page-scroll home-layout">
+            <section class="home-hero">
+              <button type="button" id="home-refresh" class="home-refresh" title="刷新首页">刷新</button>
+              <div class="home-hero-copy"><div id="home-date" class="home-date"></div><div id="home-clock" class="home-clock">--:--</div><div id="home-weather" class="home-weather">正在读取天气</div><div class="home-quote">“愿你在自己的世界里闪闪发光，也能照亮偶然路过的人。”</div><div class="home-quote-source">— 每日热评</div><p id="home-summary">正在读取你的音乐内容…</p></div>
+            </section>
+            <div class="home-content">
+              <section id="home-feature-grid" class="home-feature-grid">
+                <button type="button" id="home-library-card" class="home-feature-card"><span>歌单</span><strong>我的歌单</strong><small id="home-library-meta">登录后同步</small><div id="home-library-cover" class="feature-cover"></div></button>
+                <button type="button" id="home-daily-card" class="home-feature-card"><span>每日</span><strong id="home-daily-title">每日推荐</strong><small id="home-daily-meta">点击播放今日队列</small><div id="home-daily-cover" class="feature-cover"></div></button>
+                <button type="button" id="home-single-card" class="home-feature-card"><span>单曲</span><strong id="home-single-title">等待推荐</strong><small id="home-single-meta">今日单曲</small><div id="home-single-cover" class="feature-cover"></div></button>
+                <button type="button" id="home-continue-card" class="home-feature-card"><span>继续听</span><strong id="home-continue-title">当前没有歌曲</strong><small id="home-continue-meta">打开正在播放</small><div id="home-continue-cover" class="feature-cover"></div></button>
+              </section>
+              <section id="home-playlists-section" class="home-section" hidden><div class="section-head"><h2>我的歌单</h2><button type="button" data-route="library">查看全部</button></div><div id="home-playlists" class="home-playlist-grid"></div></section>
+              <section id="home-daily-section" class="home-section" hidden><div class="section-head"><h2>接着听</h2><button type="button" id="play-daily">播放全部</button></div><div id="home-daily" class="home-listen-rail"></div></section>
+              <section id="home-podcasts-section" class="home-section" hidden><div class="section-head"><h2>热门播客</h2></div><div id="home-podcasts" class="home-listen-rail"></div></section>
+              <section id="home-ranking-section" hidden><div id="home-ranking"></div></section>
+              <section id="home-history-section" class="home-section compact" hidden><div class="section-head"><h2>最近搜索</h2><button type="button" id="clear-search-history">清空</button></div><div id="search-history" class="keyword-row"></div></section>
+              <div id="home-empty" class="home-empty" hidden><strong>登录后同步每日推荐和私人歌单</strong><span>未登录也可以直接搜索公开曲库。</span><button type="button" id="home-login" class="chip active">登录账号</button></div>
+            </div>
           </div>
         </section>
 
@@ -80,19 +92,27 @@
           </div>
           <section class="lyrics-panel" id="lyrics-panel" aria-label="滚动歌词"><div class="lyrics-toolbar"><span class="label">歌词</span><button type="button" id="btn-toggle-trans" class="chip" hidden>翻译</button></div><p id="lyrics-status" class="lyrics-status">播放歌曲后显示歌词</p><div id="lyrics-scroller" class="lyrics-scroller"></div></section>
         </section>
+
+        <section id="settings-view" class="page-view" data-view="settings" aria-label="设置">
+          <div class="page-scroll settings-page"><div class="settings-head"><span class="eyebrow">MINERADIO SETTINGS</span><h1>设置</h1><p>播放器、音源与桌面功能</p></div><div class="settings-grid">
+            <section class="settings-card"><h2>播放</h2><label>默认音质<select id="setting-quality"></select></label><label>播放倍速<input id="setting-rate" class="slider" type="range" min="0.5" max="2" step="0.05"><output id="setting-rate-value">1.00×</output></label><label>默认音量<input id="setting-volume" class="slider" type="range" min="0" max="1" step="0.01"><output id="setting-volume-value">85%</output></label></section>
+            <section class="settings-card"><h2>搜索与账号</h2><label>默认搜索源<select id="setting-provider"><option value="netease">网易云</option><option value="kugou">酷狗</option></select></label><button type="button" id="setting-account" class="setting-action">账号中心</button><button type="button" id="setting-library" class="setting-action">我的歌单</button></section>
+            <section class="settings-card"><h2>桌面</h2><label class="setting-switch"><span>桌面歌词</span><input id="setting-desktop-lyrics" type="checkbox"></label><button type="button" id="setting-fullscreen" class="setting-action">切换全屏</button><p>桌面歌词托盘解锁仍需人工点击验收。</p></section>
+          </div></div>
+        </section>
       </main>
     </div>
 
     <div id="side-status" class="search-feedback" aria-live="polite"></div>
 
-    <footer class="bottombar">
-      <div class="transport-meta"><img id="mini-cover" class="mini-cover" alt="" /><div class="texts"><div id="mini-title" class="t">未播放</div><div id="mini-artist" class="a"></div></div></div>
+    <footer class="bottombar" title="点击歌曲信息进入正在播放">
+      <div class="transport-actions"><div class="transport-meta" role="button" tabindex="0" aria-label="打开正在播放"><img id="mini-cover" class="mini-cover" alt="" /><div class="texts"><div id="mini-title" class="t">未播放</div><div id="mini-artist" class="a"></div></div></div><div class="action-buttons"><div class="quality-menu"><button type="button" id="btn-quality" class="chip" title="音质">音质</button><div id="quality-pop" class="quality-pop"></div></div><button type="button" id="btn-like" class="icon-btn" title="红心喜欢" aria-label="红心喜欢"><svg viewBox="0 0 24 24"><path d="M12 20.6 4.7 14C.4 10.1 2.6 3.4 8 3.4c1.7 0 3.2.8 4 2 1-1.2 2.3-2 4-2 5.4 0 7.6 6.7 3.3 10.6Z"/></svg></button><button type="button" id="btn-comments" class="icon-btn comment-button" title="评论" aria-label="评论"><svg viewBox="0 0 24 24"><path d="M20 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h13Z"/></svg><span id="comment-count">0</span></button><button type="button" id="btn-collect" class="icon-btn" title="收藏到歌单" aria-label="收藏到歌单"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button></div></div>
       <div class="transport-center">
         <div id="mini-queue-popover" class="mini-queue-popover"><div class="mini-queue-head"><strong>当前队列</strong><span id="mini-queue-count">0 首</span></div><div id="mini-queue-list" class="song-list" data-mode="queue"></div></div>
-        <div class="transport-btns"><button type="button" id="btn-mode" class="icon-btn" title="播放模式">➡</button><button type="button" id="btn-prev" class="icon-btn" title="上一首">⏮</button><button type="button" id="btn-play" class="icon-btn primary" title="播放/暂停">▶</button><button type="button" id="btn-next" class="icon-btn" title="下一首">⏭</button><button type="button" id="btn-queue" class="icon-btn" title="当前队列">☷</button></div>
+        <div class="transport-btns"><button type="button" id="btn-mode" class="icon-btn mode-order" title="播放模式"><svg viewBox="0 0 24 24"><path d="M17 2l4 4-4 4M3 11V9a4 4 0 0 1 4-4h14M7 22l-4-4 4-4M21 13v2a4 4 0 0 1-4 4H3"/></svg></button><button type="button" id="btn-prev" class="icon-btn icon-fill" title="上一首"><svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6 8.5 6V6Z"/></svg></button><button type="button" id="btn-play" class="icon-btn primary icon-fill" title="播放/暂停"><svg class="play-symbol" viewBox="0 0 24 24"><path d="M8 5v14l11-7Z"/></svg><svg class="pause-symbol" viewBox="0 0 24 24"><path d="M6.5 5h4v14h-4zm7 0h4v14h-4z"/></svg></button><button type="button" id="btn-next" class="icon-btn icon-fill" title="下一首"><svg viewBox="0 0 24 24"><path d="m6 18 8.5-6L6 6zm10-12h2v12h-2z"/></svg></button><button type="button" id="btn-queue" class="icon-btn" title="当前队列"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></button></div>
         <div class="progress-row"><span id="time-cur" class="time">0:00</span><input id="seek" class="slider" type="range" min="0" max="0" value="0" step="0.1" /><span id="time-dur" class="time">0:00</span></div>
       </div>
-      <div class="transport-extra"><button type="button" id="btn-mute" class="icon-btn" title="静音">🔊</button><div class="volume-wrap"><input id="volume" class="slider" type="range" min="0" max="1" step="0.01" value="0.85" /></div><div class="quality-menu"><button type="button" id="btn-quality" class="chip" title="音质">音质</button><div id="quality-pop" class="quality-pop"></div></div></div>
+      <div class="transport-extra"><button type="button" id="btn-lyrics" class="icon-btn lyrics-word" title="歌词">词</button><button type="button" id="btn-rate" class="rate-btn" title="播放倍速">1.00×</button><div id="rate-pop" class="rate-pop"><label>播放倍速 <output id="rate-value">1.00×</output></label><input id="rate-slider" class="slider" type="range" min="0.5" max="2" step="0.05" value="1"></div><button type="button" id="btn-mute" class="icon-btn" title="静音"><svg class="volume-on" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4Zm4 4.5a4 4 0 0 1 0 5"/></svg><svg class="volume-off" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4Zm4 5 6-6m-6 0 6 6"/></svg></button><div class="volume-wrap"><input id="volume" class="slider" type="range" min="0" max="1" step="0.01" value="0.85" /></div><button type="button" id="btn-fullscreen" class="icon-btn" title="全屏"><svg viewBox="0 0 24 24"><path d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5"/></svg></button></div>
     </footer>
   </div>
   <div id="login-modal" class="modal-mask" hidden>
@@ -113,6 +133,8 @@
       <div class="modal-actions"><button type="button" id="account-add" class="chip">登录另一平台</button><button type="button" id="account-logout" class="chip danger">退出当前账号</button></div>
     </section>
   </div>
+  <div id="comment-modal" class="modal-mask" hidden><section class="modal-card comment-card" role="dialog" aria-modal="true" aria-labelledby="comment-title"><div class="modal-head"><div><span class="eyebrow">SONG COMMENTS</span><h2 id="comment-title">评论</h2><p id="comment-sub"></p></div><button type="button" id="comment-close" class="modal-close" aria-label="关闭">×</button></div><div id="comment-list" class="comment-list"></div></section></div>
+  <div id="collect-modal" class="modal-mask" hidden><section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="collect-title"><div class="modal-head"><div><span class="eyebrow">ADD TO PLAYLIST</span><h2 id="collect-title">收藏到歌单</h2></div><button type="button" id="collect-close" class="modal-close" aria-label="关闭">×</button></div><p id="collect-status" class="modal-status">正在读取歌单…</p><div id="collect-list" class="collect-list"></div></section></div>
   <div id="toast-host" class="toast-host"></div>
   <script type="module" src="/js/app.js"></script>
 </body>

@@ -67,6 +67,10 @@ function applyVolume() {
   a.volume = s.muted ? 0 : s.volume;
 }
 
+function applyPlaybackRate() {
+  ensureAudio().playbackRate = store.get().playbackRate || 1;
+}
+
 function pickNextIndex(delta, fromEnded) {
   const s = store.get();
   const n = s.queue.length;
@@ -121,6 +125,7 @@ async function loadAndPlay(song) {
   try {
     a.pause();
     a.src = src;
+    a.playbackRate = store.get().playbackRate || 1;
     a.load();
     const p = a.play();
     if (p && p.catch) await p.catch((err) => {
@@ -145,6 +150,7 @@ export const player = {
   init() {
     ensureAudio();
     applyVolume();
+    applyPlaybackRate();
     bus.on('play-request', (song) => {
       loadAndPlay(song);
     });
@@ -216,6 +222,11 @@ export const player = {
     store.patch({ muted: !store.get().muted });
     applyVolume();
     syncTray();
+  },
+  setPlaybackRate(rate) {
+    const value = Math.min(2, Math.max(0.5, Number(rate) || 1));
+    store.patch({ playbackRate: value });
+    applyPlaybackRate();
   },
   setQuality(q) {
     store.patch({ quality: q });

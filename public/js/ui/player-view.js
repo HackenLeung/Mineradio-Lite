@@ -2,6 +2,7 @@ import { bus } from '../core/bus.js';
 import { store } from '../core/store.js';
 import { player } from '../core/player.js';
 import { coverUrl } from '../core/api.js';
+import { desktop } from '../core/desktop.js';
 
 function fmt(sec) {
   sec = Math.max(0, Math.floor(Number(sec) || 0));
@@ -32,6 +33,13 @@ export function mountPlayerView(root) {
   const btnMute = root.querySelector('#btn-mute');
   const btnQuality = root.querySelector('#btn-quality');
   const qualityPop = root.querySelector('#quality-pop');
+  const transportMeta = root.querySelector('.transport-meta');
+  const btnLyrics = root.querySelector('#btn-lyrics');
+  const btnRate = root.querySelector('#btn-rate');
+  const ratePop = root.querySelector('#rate-pop');
+  const rateSlider = root.querySelector('#rate-slider');
+  const rateValue = root.querySelector('#rate-value');
+  const btnFullscreen = root.querySelector('#btn-fullscreen');
   const bgA = root.querySelector('#bg-a');
   const bgB = root.querySelector('#bg-b');
 
@@ -84,10 +92,9 @@ export function mountPlayerView(root) {
     }
     btnPlay.setAttribute('aria-label', s.playing ? '暂停' : '播放');
     btnPlay.dataset.playing = s.playing ? '1' : '0';
-    btnPlay.textContent = s.playing ? '⏸' : '▶';
-    const modeIcon = { order: '➡', loop: '🔁', single: '🔂', shuffle: '🔀' };
-    btnMode.textContent = modeIcon[s.playMode] || '➡';
-    btnMode.title = s.playMode;
+    const modeLabels = { order: '顺序播放', loop: '列表循环', single: '单曲循环', shuffle: '随机播放' };
+    btnMode.dataset.mode = s.playMode;
+    btnMode.title = modeLabels[s.playMode] || '播放模式';
     if (!seeking) {
       const dur = s.duration || 0;
       const cur = s.currentTime || 0;
@@ -97,7 +104,11 @@ export function mountPlayerView(root) {
       tDur.textContent = fmt(dur);
     }
     vol.value = String(s.volume);
-    btnMute.textContent = s.muted || s.volume === 0 ? '🔇' : '🔊';
+    btnMute.classList.toggle('muted', s.muted || s.volume === 0);
+    const rateLabel = `${Number(s.playbackRate || 1).toFixed(2)}×`;
+    if (btnRate) btnRate.textContent = rateLabel;
+    if (rateSlider) rateSlider.value = String(s.playbackRate || 1);
+    if (rateValue) rateValue.textContent = rateLabel;
   }
 
   let seeking = false;
@@ -163,6 +174,25 @@ export function mountPlayerView(root) {
     qualityPop.classList.toggle('open');
   });
   document.addEventListener('click', () => qualityPop.classList.remove('open'));
+
+  const openPlayer = () => bus.emit('navigate', 'player');
+  transportMeta?.addEventListener('click', openPlayer);
+  transportMeta?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openPlayer(); }
+  });
+  btnLyrics?.addEventListener('click', openPlayer);
+  btnFullscreen?.addEventListener('click', () => desktop.toggleFullscreen());
+  btnRate?.addEventListener('click', (event) => {
+    event.stopPropagation();
+    ratePop?.classList.toggle('open');
+    btnRate.classList.toggle('active', !!ratePop?.classList.contains('open'));
+  });
+  ratePop?.addEventListener('click', (event) => event.stopPropagation());
+  rateSlider?.addEventListener('input', () => player.setPlaybackRate(Number(rateSlider.value)));
+  document.addEventListener('click', () => {
+    ratePop?.classList.remove('open');
+    btnRate?.classList.remove('active');
+  });
 
   renderMeta(store.get());
 }

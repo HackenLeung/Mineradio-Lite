@@ -12,6 +12,8 @@ import { mountShell } from './ui/shell.js';
 import { mountHome } from './ui/home.js';
 import { mountAccount } from './ui/account.js';
 import { mountLibrary } from './ui/library.js';
+import { mountSettings } from './ui/settings.js';
+import { mountSongActions } from './ui/song-actions.js';
 
 function boot() {
   player.init();
@@ -23,6 +25,8 @@ function boot() {
   mountAccount();
   mountHome();
   mountLibrary();
+  mountSettings();
+  mountSongActions();
 
   fetchAppVersion()
     .then((v) => {

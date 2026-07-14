@@ -16,13 +16,16 @@ store.playAt(0);
 assert.equal(store.current().id, '1', 'playAt 应切换当前歌曲');
 store.playAt(9);
 assert.equal(store.current().id, '1', '无效 playAt 不应破坏当前歌曲');
+store.patch({ playbackRate: 1.25 });
+assert.equal(store.get().playbackRate, 1.25, '倍速状态应写入播放器状态');
+assert.equal(JSON.parse(localStorage.getItem('mineradio-lite-player')).playbackRate, 1.25, '倍速应持久化');
 
 function classList() {
   const names = new Set();
   return { toggle(name, on) { on ? names.add(name) : names.delete(name); }, contains(name) { return names.has(name); } };
 }
-const views = ['home', 'search', 'library', 'detail', 'player'].map((route) => ({ route, classList: classList() }));
-const nav = ['home', 'search', 'library', 'player'].map((route) => ({ dataset: { route }, classList: classList(), addEventListener() {} }));
+const views = ['home', 'search', 'library', 'detail', 'player', 'settings'].map((route) => ({ route, classList: classList() }));
+const nav = ['home', 'search', 'library', 'player', 'settings'].map((route) => ({ dataset: { route }, classList: classList(), addEventListener() {} }));
 let backHandler = null;
 globalThis.document = {
   body: { dataset: {} },
@@ -41,5 +44,7 @@ navigate('player');
 navigate('detail');
 backHandler();
 assert.equal(views.find((view) => view.route === 'player').classList.contains('active'), true, '详情返回应回到来源页');
+navigate('settings');
+assert.equal(views.find((view) => view.route === 'settings').classList.contains('active'), true, '设置入口应打开设置页');
 
 console.log('UI state tests OK');
