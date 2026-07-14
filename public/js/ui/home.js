@@ -5,6 +5,114 @@ import { bus } from '../core/bus.js';
 import { toast } from './toast.js';
 
 let homeData = null;
+const HOME_HERO_CONFIG_KEY = 'mineradio-lite-home-hero-v1';
+const HOME_IMAGE_DB = 'mineradio-lite-assets';
+const HOME_IMAGE_STORE = 'home';
+const HOME_IMAGE_KEY = 'hero-image';
+const HOME_HERO_DEFAULT = {
+  text: '愿你在自己的世界里闪闪发光，也能照亮偶然路过的人。',
+  source: '每日热评',
+  positionX: 50,
+  positionY: 50,
+  zoom: 100,
+  showWeather: true,
+};
+let heroImageBlob = null;
+let heroImageUrl = '';
+let imagePickCallback = null;
+
+function clamp(value, min, max, fallback) {
+  const number = Number(value);
+  return Number.isFinite(number) ? Math.max(min, Math.min(max, number)) : fallback;
+}
+
+export function normalizeHomeHeroConfig(value) {
+  const raw = value && typeof value === 'object' ? value : {};
+  return {
+    text: String(raw.text || HOME_HERO_DEFAULT.text).trim() || HOME_HERO_DEFAULT.text,
+    source: String(raw.source == null ? HOME_HERO_DEFAULT.source : raw.source).trim(),
+    positionX: clamp(raw.positionX, 0, 100, 50),
+    positionY: clamp(raw.positionY, 0, 100, 50),
+    zoom: clamp(raw.zoom, 100, 180, 100),
+    showWeather: raw.showWeather !== false,
+  };
+}
+
+function readHeroConfig() {
+  try { return normalizeHomeHeroConfig(JSON.parse(localStorage.getItem(HOME_HERO_CONFIG_KEY) || 'null')); }
+  catch (_) { return normalizeHomeHeroConfig(null); }
+}
+
+function writeHeroConfig(config) {
+  localStorage.setItem(HOME_HERO_CONFIG_KEY, JSON.stringify(normalizeHomeHeroConfig(config)));
+}
+
+function openHeroImageDb() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(HOME_IMAGE_DB, 1);
+    request.onupgradeneeded = () => {
+      if (!request.result.objectStoreNames.contains(HOME_IMAGE_STORE)) request.result.createObjectStore(HOME_IMAGE_STORE);
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error || new Error('IMAGE_DB_OPEN_FAILED'));
+  });
+}
+
+async function readHeroImageBlob() {
+  const db = await openHeroImageDb();
+  return new Promise((resolve, reject) => {
+    const request = db.transaction(HOME_IMAGE_STORE, 'readonly').objectStore(HOME_IMAGE_STORE).get(HOME_IMAGE_KEY);
+    request.onsuccess = () => resolve(request.result instanceof Blob ? request.result : null);
+    request.onerror = () => reject(request.error || new Error('IMAGE_READ_FAILED'));
+  }).finally(() => db.close());
+}
+
+async function writeHeroImageBlob(blob) {
+  const db = await openHeroImageDb();
+  return new Promise((resolve, reject) => {
+    const store = db.transaction(HOME_IMAGE_STORE, 'readwrite').objectStore(HOME_IMAGE_STORE);
+    const request = blob ? store.put(blob, HOME_IMAGE_KEY) : store.delete(HOME_IMAGE_KEY);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error || new Error('IMAGE_WRITE_FAILED'));
+  }).finally(() => db.close());
+}
+
+function applyHeroImage(blob) {
+  if (heroImageUrl) URL.revokeObjectURL(heroImageUrl);
+  heroImageBlob = blob || null;
+  heroImageUrl = blob ? URL.createObjectURL(blob) : '';
+  const media = document.getElementById('home-hero-media');
+  if (!media) return;
+  media.style.backgroundImage = heroImageUrl ? `url("${heroImageUrl}")` : '';
+  media.classList.toggle('has-image', !!heroImageUrl);
+}
+
+function applyHeroConfig(config = readHeroConfig()) {
+  const normalized = normalizeHomeHeroConfig(config);
+  const quote = document.getElementById('home-quote');
+  const source = document.getElementById('home-quote-source');
+  const weather = document.getElementById('home-weather');
+  const media = document.getElementById('home-hero-media');
+  if (quote) quote.textContent = `“${normalized.text}”`;
+  if (source) { source.textContent = normalized.source ? `— ${normalized.source}` : ''; source.hidden = !normalized.source; }
+  if (weather) weather.hidden = !normalized.showWeather;
+  if (media) {
+    media.style.backgroundPosition = `${normalized.positionX}% ${normalized.positionY}%`;
+    media.style.transform = `scale(${normalized.zoom / 100})`;
+  }
+  return normalized;
+}
+
+async function loadHeroImage() {
+  try { applyHeroImage(await readHeroImageBlob()); }
+  catch (_) { applyHeroImage(null); }
+}
+
+function pickHeroImage(callback) {
+  imagePickCallback = callback;
+  const input = document.getElementById('home-image-input');
+  if (input) { input.value = ''; input.click(); }
+}
 
 function clear(host) { while (host && host.firstChild) host.removeChild(host.firstChild); }
 function show(id, visible) { const el = document.getElementById(id); if (el) el.hidden = !visible; }
@@ -128,6 +236,128 @@ async function loadWeather() {
   } catch (_) { node.textContent = '天气暂不可用'; }
 }
 
+function mountHomeHeroEditor() {
+  const modal = document.getElementById('home-editor-modal');
+  const imageInput = document.getElementById('home-image-input');
+  const textInput = document.getElementById('home-editor-text');
+  const sourceInput = document.getElementById('home-editor-source');
+  const showWeatherInput = document.getElementById('home-editor-show-weather');
+  const positionXInput = document.getElementById('home-editor-position-x');
+  const positionYInput = document.getElementById('home-editor-position-y');
+  const zoomInput = document.getElementById('home-editor-zoom');
+  const previewMedia = document.getElementById('home-editor-preview-media');
+  const previewText = document.getElementById('home-editor-preview-text');
+  const previewSource = document.getElementById('home-editor-preview-source');
+  const status = document.getElementById('home-editor-status');
+  let pendingBlob = null;
+  let pendingChanged = false;
+  let pendingUrl = '';
+
+  function editorConfig() {
+    return normalizeHomeHeroConfig({
+      text: textInput.value,
+      source: sourceInput.value,
+      positionX: positionXInput.value,
+      positionY: positionYInput.value,
+      zoom: zoomInput.value,
+      showWeather: showWeatherInput.checked,
+    });
+  }
+
+  function setPendingPreview(blob) {
+    if (pendingUrl) URL.revokeObjectURL(pendingUrl);
+    pendingBlob = blob || null;
+    pendingUrl = blob ? URL.createObjectURL(blob) : '';
+    previewMedia.style.backgroundImage = pendingUrl ? `url("${pendingUrl}")` : '';
+  }
+
+  function updateEditorPreview() {
+    const config = editorConfig();
+    previewText.textContent = `“${config.text}”`;
+    previewSource.textContent = config.source ? `— ${config.source}` : '';
+    previewMedia.style.backgroundPosition = `${config.positionX}% ${config.positionY}%`;
+    previewMedia.style.transform = `scale(${config.zoom / 100})`;
+    document.getElementById('home-editor-position-x-value').textContent = `${Math.round(config.positionX)}%`;
+    document.getElementById('home-editor-position-y-value').textContent = `${Math.round(config.positionY)}%`;
+    document.getElementById('home-editor-zoom-value').textContent = `${Math.round(config.zoom)}%`;
+  }
+
+  function closeEditor() {
+    modal.hidden = true;
+    if (pendingUrl) URL.revokeObjectURL(pendingUrl);
+    pendingUrl = '';
+    pendingBlob = null;
+    pendingChanged = false;
+  }
+
+  async function openEditor() {
+    const config = readHeroConfig();
+    textInput.value = config.text;
+    sourceInput.value = config.source;
+    showWeatherInput.checked = config.showWeather;
+    positionXInput.value = String(config.positionX);
+    positionYInput.value = String(config.positionY);
+    zoomInput.value = String(config.zoom);
+    status.textContent = '';
+    pendingChanged = false;
+    try { setPendingPreview(heroImageBlob || await readHeroImageBlob()); }
+    catch (_) { setPendingPreview(null); }
+    updateEditorPreview();
+    modal.hidden = false;
+    textInput.focus();
+  }
+
+  imageInput?.addEventListener('change', () => {
+    const file = imageInput.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { toast.error('请选择图片文件'); return; }
+    if (file.size > 25 * 1024 * 1024) { toast.error('图片不能超过 25MB'); return; }
+    const callback = imagePickCallback;
+    imagePickCallback = null;
+    if (typeof callback === 'function') callback(file);
+  });
+
+  document.getElementById('home-change-image')?.addEventListener('click', () => pickHeroImage(async (file) => {
+    try {
+      await writeHeroImageBlob(file);
+      applyHeroImage(file);
+      toast('首页图片已更换');
+    } catch (error) { toast.error(error.message || '图片保存失败'); }
+  }));
+  document.getElementById('home-edit-content')?.addEventListener('click', openEditor);
+  document.getElementById('home-editor-pick-image')?.addEventListener('click', () => pickHeroImage((file) => {
+    pendingChanged = true;
+    setPendingPreview(file);
+    updateEditorPreview();
+  }));
+  document.getElementById('home-editor-clear-image')?.addEventListener('click', () => {
+    pendingChanged = true;
+    setPendingPreview(null);
+    updateEditorPreview();
+  });
+  [textInput, sourceInput, showWeatherInput, positionXInput, positionYInput, zoomInput].forEach((input) => input?.addEventListener('input', updateEditorPreview));
+  document.getElementById('home-editor-save')?.addEventListener('click', async () => {
+    if (!String(textInput.value || '').trim()) { status.textContent = '首页文案不能为空'; textInput.focus(); return; }
+    const config = editorConfig();
+    status.textContent = '正在保存…';
+    try {
+      if (pendingChanged) await writeHeroImageBlob(pendingBlob);
+      writeHeroConfig(config);
+      applyHeroConfig(config);
+      if (pendingChanged) applyHeroImage(pendingBlob);
+      closeEditor();
+      toast('首页内容已保存');
+    } catch (error) { status.textContent = error.message || '保存失败'; }
+  });
+  document.getElementById('home-editor-close')?.addEventListener('click', closeEditor);
+  document.getElementById('home-editor-cancel')?.addEventListener('click', closeEditor);
+  modal?.addEventListener('click', (event) => { if (event.target === modal) closeEditor(); });
+  document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && !modal.hidden) closeEditor(); });
+
+  applyHeroConfig();
+  loadHeroImage();
+}
+
 function detailHero(item, kind, count) {
   const hero = document.createElement('div'); hero.className = 'detail-hero';
   const img = document.createElement('img'); img.alt = ''; img.src = item.cover ? coverUrl(item.cover, 420) : '';
@@ -217,6 +447,7 @@ export function mountHome() {
   const greeting = document.getElementById('home-greeting');
   if (greeting) greeting.textContent = hour < 6 ? '夜深了' : hour < 12 ? '早上好' : hour < 18 ? '下午好' : '晚上好';
   document.getElementById('home-refresh')?.addEventListener('click', loadHome);
+  mountHomeHeroEditor();
   document.getElementById('home-library-card')?.addEventListener('click', () => bus.emit('navigate', 'library'));
   document.getElementById('home-daily-card')?.addEventListener('click', () => document.getElementById('play-daily')?.click());
   document.getElementById('home-single-card')?.addEventListener('click', () => {

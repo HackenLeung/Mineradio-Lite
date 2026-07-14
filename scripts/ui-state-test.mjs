@@ -10,6 +10,7 @@ globalThis.localStorage = {
 const { store } = await import('../public/js/core/store.js');
 const { calculateLyricScrollTop, isLyricMetadata, shouldCenterLyric } = await import('../public/js/lyrics/view.js');
 const { currentLineIndex } = await import('../public/js/lyrics/parse.js');
+const { normalizeHomeHeroConfig } = await import('../public/js/ui/home.js');
 const songs = [{ id: '1', name: 'A' }, { id: '2', name: 'B' }];
 store.setQueue(songs, 99);
 assert.equal(store.get().currentIdx, 1, 'setQueue 应把越界索引收敛到末尾');
@@ -33,6 +34,12 @@ assert.equal(shouldCenterLyric(4, 4, true, false), false, '同一歌词行的 ti
 assert.equal(shouldCenterLyric(4, 5, true, false), true, '歌词索引变化时应滚动一次');
 assert.equal(shouldCenterLyric(5, 5, false, true), true, 'seek 强制校准时应立即重新定位');
 assert.equal(currentLineIndex([{ t: 0 }, { t: 5 }, { t: 10 }], 9.9), 1, '快速 seek 应定位到正确时间行');
+const heroConfig = normalizeHomeHeroConfig({ text: ' 自定义文案 ', source: '', positionX: 140, positionY: -10, zoom: 220, showWeather: false });
+assert.equal(heroConfig.text, '自定义文案', '首页自定义文案应标准化');
+assert.equal(heroConfig.positionX, 100, '首页图片横向位置应限制在范围内');
+assert.equal(heroConfig.positionY, 0, '首页图片纵向位置应限制在范围内');
+assert.equal(heroConfig.zoom, 180, '首页图片缩放应限制在范围内');
+assert.equal(heroConfig.showWeather, false, '首页天气显示设置应保留');
 
 function classList() {
   const names = new Set();
