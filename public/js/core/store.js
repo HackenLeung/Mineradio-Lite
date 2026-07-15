@@ -8,6 +8,25 @@ const QUALITIES = [
   { key: 'jymaster', label: '超清母带', svip: true },
 ];
 
+const PLAYER_THEMES = [
+  { key: 'default', label: '默认' },
+  { key: 'immersive', label: '大封面歌词' },
+];
+
+const PLAYER_THEME_KEYS = new Set(PLAYER_THEMES.map((item) => item.key));
+
+function normalizePlayerTheme(theme) {
+  return PLAYER_THEME_KEYS.has(theme) ? theme : 'default';
+}
+
+function applyPlayerTheme(theme) {
+  const next = normalizePlayerTheme(theme);
+  if (typeof document !== 'undefined' && document.body) {
+    document.body.dataset.playerTheme = next;
+  }
+  return next;
+}
+
 const state = {
   queue: [],
   currentIdx: -1,
@@ -17,6 +36,7 @@ const state = {
   muted: false,
   playbackRate: 1,
   smartTransition: true,
+  playerTheme: 'default',
   playing: false,
   currentTime: 0,
   duration: 0,
@@ -40,6 +60,7 @@ function persist() {
       quality: state.quality,
       playMode: state.playMode,
       searchProvider: state.searchProvider,
+      playerTheme: state.playerTheme,
     }));
   } catch (_) {}
 }
@@ -54,21 +75,27 @@ function restore() {
     if (raw.quality) state.quality = raw.quality;
     if (raw.playMode) state.playMode = raw.playMode;
     if (raw.searchProvider) state.searchProvider = raw.searchProvider;
+    if (raw.playerTheme) state.playerTheme = normalizePlayerTheme(raw.playerTheme);
   } catch (_) {}
 }
 
 restore();
+applyPlayerTheme(state.playerTheme);
 
 export const store = {
   QUALITIES,
+  PLAYER_THEMES,
+  applyPlayerTheme,
   get() { return state; },
   patch(partial) {
-    Object.assign(state, partial || {});
+    const next = { ...(partial || {}) };
+    if ('playerTheme' in next) next.playerTheme = applyPlayerTheme(next.playerTheme);
+    Object.assign(state, next);
     bus.emit('store', state);
     if (
       partial &&
       ('volume' in partial || 'muted' in partial || 'playbackRate' in partial || 'smartTransition' in partial || 'quality' in partial ||
-        'playMode' in partial || 'searchProvider' in partial)
+        'playMode' in partial || 'searchProvider' in partial || 'playerTheme' in partial)
     ) persist();
   },
   setQueue(list, idx = 0) {

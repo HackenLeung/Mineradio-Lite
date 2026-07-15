@@ -88,6 +88,7 @@ function mountCustomSelect({ root, select, trigger, label, menu, items, onChange
 
 export function mountSettings() {
   const quality = document.getElementById('setting-quality');
+  const playerTheme = document.getElementById('setting-player-theme');
   const rate = document.getElementById('setting-rate');
   const rateValue = document.getElementById('setting-rate-value');
   const volume = document.getElementById('setting-volume');
@@ -104,6 +105,13 @@ export function mountSettings() {
     quality.appendChild(option);
   });
 
+  store.PLAYER_THEMES.forEach((item) => {
+    const option = document.createElement('option');
+    option.value = item.key;
+    option.textContent = optionLabel(item);
+    playerTheme.appendChild(option);
+  });
+
   const qualitySelect = mountCustomSelect({
     root: document.querySelector('[data-setting-select="quality"]'),
     select: quality,
@@ -111,6 +119,15 @@ export function mountSettings() {
     label: document.getElementById('setting-quality-label'),
     menu: document.getElementById('setting-quality-menu'),
     items: store.QUALITIES,
+  });
+
+  const playerThemeSelect = mountCustomSelect({
+    root: document.querySelector('[data-setting-select="player-theme"]'),
+    select: playerTheme,
+    trigger: document.getElementById('setting-player-theme-trigger'),
+    label: document.getElementById('setting-player-theme-label'),
+    menu: document.getElementById('setting-player-theme-menu'),
+    items: store.PLAYER_THEMES,
   });
 
   const providerSelect = mountCustomSelect({
@@ -124,15 +141,18 @@ export function mountSettings() {
 
   function sync(state) {
     quality.value = state.quality;
+    playerTheme.value = state.playerTheme || 'default';
     rate.value = String(state.playbackRate || 1); rateValue.textContent = `${Number(state.playbackRate || 1).toFixed(2)}×`;
     volume.value = String(state.volume); volumeValue.textContent = `${Math.round(state.volume * 100)}%`;
     provider.value = state.searchProvider;
     smartTransition.checked = state.smartTransition !== false;
     qualitySelect.sync(state.quality);
+    playerThemeSelect.sync(state.playerTheme || 'default');
     providerSelect.sync(state.searchProvider);
   }
   sync(store.get()); bus.on('store', sync);
   quality.addEventListener('change', () => player.setQuality(quality.value));
+  playerTheme.addEventListener('change', () => store.patch({ playerTheme: playerTheme.value }));
   rate.addEventListener('input', () => player.setPlaybackRate(Number(rate.value)));
   volume.addEventListener('input', () => player.setVolume(Number(volume.value)));
   provider.addEventListener('change', () => { store.patch({ searchProvider: provider.value }); bus.emit('search-provider-changed', provider.value); });

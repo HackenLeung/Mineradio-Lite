@@ -68,7 +68,8 @@ export function mountPlayerView(root) {
       return;
     }
     if (coverPh) coverPh.hidden = true;
-    const full = coverUrl(url, 512);
+    const stageSize = (store.get().playerTheme || 'default') === 'immersive' ? 800 : 512;
+    const full = coverUrl(url, stageSize);
     const soft = coverUrl(url, 80);
     next.onload = () => {
       next.classList.add('show');
@@ -183,8 +184,16 @@ export function mountPlayerView(root) {
 
   let seeking = false;
   let lastCover = '';
+  let lastTheme = store.get().playerTheme || 'default';
 
-  bus.on('store', (s) => renderMeta(s));
+  bus.on('store', (s) => {
+    renderMeta(s);
+    const theme = s.playerTheme || 'default';
+    if (theme !== lastTheme) {
+      lastTheme = theme;
+      if (lastCover) setCover(lastCover);
+    }
+  });
   bus.on('song-change', (song) => {
     const c = song && song.cover || '';
     if (c !== lastCover) {

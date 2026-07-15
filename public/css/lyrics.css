@@ -176,3 +176,140 @@
 
 .stage .cover-stage,
 .stage .now-meta { flex: 0 0 auto; }
+
+/* —— 大封面歌词主题：前景超大暖金歌词 —— */
+body[data-player-theme="immersive"] .lyrics-panel {
+  width: min(920px, 92vw);
+  max-height: none;
+}
+
+body[data-player-theme="immersive"] .lyric-row {
+  padding: 14px 18px;
+  color: rgba(236, 240, 242, 0.88);
+  opacity: 0.16;
+  border-radius: 16px;
+  background: transparent;
+}
+
+body[data-player-theme="immersive"] .lyric-row.near-2 { opacity: 0.32; }
+body[data-player-theme="immersive"] .lyric-row.near-1 { opacity: 0.52; }
+body[data-player-theme="immersive"] .lyric-row:hover { opacity: 0.72; }
+
+body[data-player-theme="immersive"] .lyric-main {
+  font-size: clamp(20px, 2.4vw, 28px);
+  font-weight: 600;
+  line-height: 1.45;
+  color: rgba(240, 244, 246, 0.86);
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.45);
+}
+
+body[data-player-theme="immersive"] .lyric-row.active {
+  opacity: 1;
+  transform: scale(1.03);
+  background: transparent;
+  color: #f6e7c8;
+}
+
+body[data-player-theme="immersive"] .lyric-row.active .lyric-main {
+  font-size: clamp(36px, 5.4vw, 64px);
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1.22;
+  color: #f3dfb0;
+  text-shadow:
+    0 0 2px rgba(0, 0, 0, 0.85),
+    0 2px 12px rgba(0, 0, 0, 0.72),
+    0 0 28px rgba(244, 210, 138, 0.42),
+    0 0 56px rgba(244, 210, 138, 0.22);
+}
+
+body[data-player-theme="immersive"] .lyric-main.is-words .lyric-base {
+  color: rgba(236, 240, 242, 0.78);
+}
+
+body[data-player-theme="immersive"] .lyric-main.is-words .lyric-fill {
+  color: #e8c98a;
+}
+
+/* 大封面主题：当前行整句直接全亮，不做逐字半亮半暗 */
+body[data-player-theme="immersive"] .lyric-row.active .lyric-main.is-words .lyric-base {
+  color: #f3dfb0;
+  text-shadow:
+    0 0 2px rgba(0, 0, 0, 0.85),
+    0 2px 12px rgba(0, 0, 0, 0.72),
+    0 0 28px rgba(244, 210, 138, 0.42),
+    0 0 56px rgba(244, 210, 138, 0.22);
+}
+
+body[data-player-theme="immersive"] .lyric-row.active .lyric-main.is-words .lyric-fill {
+  color: #f3dfb0;
+  clip-path: none;
+  text-shadow:
+    0 0 2px rgba(0, 0, 0, 0.85),
+    0 2px 12px rgba(0, 0, 0, 0.72),
+    0 0 28px rgba(244, 210, 138, 0.42),
+    0 0 56px rgba(244, 210, 138, 0.22);
+}
+
+body[data-player-theme="immersive"] .lyric-trans {
+  margin-top: 8px;
+  color: rgba(246, 231, 200, 0.72);
+  font-size: 58%;
+  opacity: 0.55;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.5);
+}
+
+body[data-player-theme="immersive"] .lyric-row.active .lyric-trans {
+  opacity: 0.72;
+  color: rgba(246, 231, 200, 0.82);
+}
+
+body[data-player-theme="immersive"] .lyric-row.is-meta {
+  opacity: 0.22;
+}
+
+body[data-player-theme="immersive"] .lyric-row.is-meta .lyric-main {
+  font-size: clamp(13px, 1.3vw, 16px);
+  font-weight: 500;
+  color: rgba(230, 234, 236, 0.7);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
+}
+
+body[data-player-theme="immersive"] .lyric-row.is-meta.active {
+  opacity: 0.55;
+  transform: none;
+  background: transparent;
+}
+
+body[data-player-theme="immersive"] .lyric-row.is-meta.active .lyric-main {
+  font-size: clamp(13px, 1.3vw, 16px);
+  font-weight: 600;
+  color: rgba(246, 231, 200, 0.7);
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.45);
+}
+
+body[data-player-theme="immersive"] .lyrics-return {
+  right: 18px;
+  bottom: 22px;
+  border-color: rgba(244, 210, 138, 0.22);
+  background: rgba(8, 9, 12, 0.62);
+  color: rgba(246, 231, 200, 0.88);
+  backdrop-filter: blur(12px) saturate(1.2);
+}
+
+body[data-player-theme="immersive"] .lyrics-return:hover {
+  color: #fff8ea;
+  border-color: rgba(244, 210, 138, 0.42);
+}
+
+@media (max-width: 650px) {
+  body[data-player-theme="immersive"] .lyric-row {
+    padding: 11px 10px;
+  }
+  body[data-player-theme="immersive"] .lyric-row.active .lyric-main {
+    font-size: clamp(28px, 7.6vw, 44px);
+  }
+  body[data-player-theme="immersive"] .lyric-main {
+    font-size: clamp(16px, 4.2vw, 22px);
+  }
+}

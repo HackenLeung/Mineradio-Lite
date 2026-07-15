@@ -264,3 +264,181 @@
   .stage .cover-stage { width:min(65vw,300px); height:min(65vw,300px); }
   .stage .lyrics-panel { min-height:300px; }
 }
+
+/* —— 大封面歌词（immersive）播放主题 —— */
+body[data-player-theme="immersive"][data-route="player"] #player-view.stage,
+body[data-player-theme="immersive"][data-route="player"] #player-view.stage.active {
+  /* 保持 page-view 的 absolute+inset 占满主区；勿改成 relative，否则仅有绝对子元素时高度塌为 0 */
+  position: absolute;
+  inset: 0;
+  display: block !important;
+  grid-template-columns: none;
+  gap: 0;
+  padding: 0;
+  width: auto;
+  height: auto;
+  overflow: hidden;
+}
+
+body[data-player-theme="immersive"][data-route="player"] #player-view .player-visual {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  gap: 0;
+  pointer-events: none;
+}
+
+body[data-player-theme="immersive"][data-route="player"] #player-view .cover-stage {
+  position: absolute;
+  left: 50%;
+  top: 48%;
+  width: min(88vmin, calc(100vh - 220px), 760px);
+  height: min(88vmin, calc(100vh - 220px), 760px);
+  max-width: none;
+  aspect-ratio: auto;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow:
+    0 40px 120px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+  transform: translate(-50%, -50%);
+  overflow: hidden;
+  pointer-events: none;
+}
+
+body[data-player-theme="immersive"][data-route="player"] #player-view .cover-stage img {
+  object-fit: cover;
+  opacity: 0;
+  filter: saturate(1.02) brightness(0.78) contrast(0.98);
+}
+body[data-player-theme="immersive"][data-route="player"] #player-view .cover-stage img.show {
+  opacity: 0.62;
+}
+
+/* 暗角 + 压暗，保证前景歌词可读 */
+body[data-player-theme="immersive"][data-route="player"] #player-view .cover-stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 72% 72% at 50% 46%, rgba(0, 0, 0, 0.18) 0%, rgba(0, 0, 0, 0.52) 58%, rgba(0, 0, 0, 0.78) 100%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.28) 0%, transparent 28%, transparent 62%, rgba(0, 0, 0, 0.56) 100%);
+}
+
+/* CSS 点阵质感（无 canvas / 无 rAF） */
+body[data-player-theme="immersive"][data-route="player"] #player-view .cover-stage::after {
+  content: "";
+  position: absolute;
+  inset: -2%;
+  z-index: 3;
+  pointer-events: none;
+  opacity: 0.42;
+  mix-blend-mode: soft-light;
+  background-image:
+    radial-gradient(circle, rgba(255, 255, 255, 0.72) 0 0.9px, transparent 1.15px),
+    radial-gradient(circle, rgba(255, 245, 220, 0.18) 0 0.6px, transparent 0.9px);
+  background-size: 4px 4px, 7px 7px;
+  background-position: 0 0, 1.5px 2px;
+}
+
+body[data-player-theme="immersive"][data-route="player"] #player-view .now-meta {
+  display: none !important;
+}
+
+body[data-player-theme="immersive"][data-route="player"] #player-view .lyrics-panel {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  z-index: 2;
+  width: min(920px, 92vw);
+  max-width: none;
+  height: auto;
+  max-height: none;
+  margin: 0;
+  padding: 108px 12px 148px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  pointer-events: none;
+  background: transparent;
+}
+
+body[data-player-theme="immersive"][data-route="player"] #player-view .lyrics-panel > * {
+  pointer-events: auto;
+}
+
+body[data-player-theme="immersive"][data-route="player"] #player-view .lyrics-toolbar {
+  position: absolute;
+  top: 96px;
+  right: 18px;
+  z-index: 4;
+  margin: 0;
+}
+
+body[data-player-theme="immersive"][data-route="player"] #player-view .lyrics-status {
+  position: relative;
+  z-index: 1;
+  color: rgba(246, 231, 200, 0.72);
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.55);
+}
+
+body[data-player-theme="immersive"][data-route="player"] #player-view .lyrics-scroller {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+  padding: 0 10px;
+  background: transparent;
+  mask-image: linear-gradient(180deg, transparent 0%, #000 12%, #000 82%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 12%, #000 82%, transparent 100%);
+}
+
+@media (max-width: 900px) {
+  body[data-player-theme="immersive"][data-route="player"] #player-view .cover-stage {
+    width: min(78vmin, calc(100vh - 240px), 560px);
+    height: min(78vmin, calc(100vh - 240px), 560px);
+    border-radius: 22px;
+  }
+  body[data-player-theme="immersive"][data-route="player"] #player-view .lyrics-panel {
+    width: min(100%, 94vw);
+    padding: 100px 8px 140px;
+  }
+}
+
+@media (max-width: 650px) {
+  body[data-player-theme="immersive"][data-route="player"] #player-view.stage,
+  body[data-player-theme="immersive"][data-route="player"] #player-view.stage.active {
+    display: block !important;
+    overflow: hidden;
+    padding: 0;
+  }
+  body[data-player-theme="immersive"][data-route="player"] #player-view .player-visual,
+  body[data-player-theme="immersive"][data-route="player"] #player-view .lyrics-panel {
+    width: 100%;
+  }
+  body[data-player-theme="immersive"][data-route="player"] #player-view .cover-stage {
+    width: min(86vmin, calc(100vh - 260px), 420px);
+    height: min(86vmin, calc(100vh - 260px), 420px);
+    top: 46%;
+  }
+  body[data-player-theme="immersive"][data-route="player"] #player-view .lyrics-panel {
+    min-height: 0;
+    padding: 96px 6px 132px;
+  }
+  body[data-player-theme="immersive"][data-route="player"] #player-view .lyrics-toolbar {
+    top: 88px;
+    right: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body[data-player-theme="immersive"][data-route="player"] #player-view .cover-stage::after {
+    opacity: 0.4;
+  }
+}

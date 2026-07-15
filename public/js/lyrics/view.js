@@ -318,7 +318,18 @@ export function mountLyricsView(root) {
   else window.addEventListener('resize', recalibrateAfterResize);
 
   bus.on('song-change', loadForSong);
-  bus.on('store', (state) => sync(state.currentTime || 0));
+  let lastPlayerTheme = store.get().playerTheme || 'default';
+  bus.on('store', (state) => {
+    const theme = state.playerTheme || 'default';
+    if (theme !== lastPlayerTheme) {
+      lastPlayerTheme = theme;
+      window.setTimeout(() => {
+        recalibrateSpacers();
+        if (autoFollow) centerActive('auto');
+      }, 40);
+    }
+    sync(state.currentTime || 0);
+  });
   bus.on('playing-change', () => sync(store.get().currentTime || 0));
   bus.on('seek', (time) => {
     clearManualTimer();
