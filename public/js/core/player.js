@@ -39,6 +39,9 @@ function hasPlayableSource(media) {
 
 function songKey(song) {
   if (!song) return '';
+  if ((song.provider || song.source || song.type) === 'local') {
+    return `local:${song.localKey || song.localPath || song.localUrl || song.url || song.name || ''}`;
+  }
   return `${song.provider || song.source || 'netease'}:${song.id || song.name || ''}`;
 }
 
@@ -497,16 +500,25 @@ async function loadAndPlay(song, { manual = false } = {}) {
   cancelSmartCrossfade();
   const token = ++loadToken;
   const quality = store.get().quality;
+  let playSong = song;
+
+  // 本地文件在服务重启后 local-media id 会失效，播放前尽量刷新
+  if ((song.provider || song.source || song.type) === 'local') {
+    try {
+      const { localLibrary } = await import('./local-library.js');
+      playSong = await localLibrary.ensureFreshUrl(song);
+    } catch (_) {}
+  }
 
   store.patch({
-    now: song,
+    now: playSong,
     trial: false,
     levelLabel: '',
     currentTime: 0,
     duration: 0,
     playing: false,
   });
-  bus.emit('song-change', song);
+  bus.emit('song-change', playSong);
 
   const a = ensureAudio();
   const wantSmart = store.get().smartTransition !== false;
@@ -521,7 +533,7 @@ async function loadAndPlay(song, { manual = false } = {}) {
 
   let info;
   try {
-    info = await fetchSongUrl(song, quality);
+    info = await fetchSongUrl(playSong, quality);
   } catch (e) {
     clearVolumeRamp();
     applyVolume();
@@ -601,7 +613,8 @@ export const player = {
     if (!song) return;
     if (enqueue) {
       const s = store.get();
-      const exists = s.queue.findIndex((x) => String(x.id) === String(song.id) && (x.provider || x.source) === (song.provider || song.source));
+      const key = songKey(song);
+      const exists = s.queue.findIndex((x) => songKey(x) === key);
       if (exists >= 0) store.playAt(exists);
       else store.enqueue([song], true);
       return;

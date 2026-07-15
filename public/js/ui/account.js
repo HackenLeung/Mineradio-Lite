@@ -1,7 +1,17 @@
 import { bus } from '../core/bus.js';
 import { desktop } from '../core/desktop.js';
 import { store } from '../core/store.js';
-import { checkLoginQr, coverUrl, createLoginQr, fetchLoginStatus, logoutProvider, saveLoginCookie } from '../core/api.js';
+import { player } from '../core/player.js';
+import {
+  checkLoginQr,
+  coverUrl,
+  createLoginQr,
+  fetchKugouListenHistory,
+  fetchListenRanking,
+  fetchLoginStatus,
+  logoutProvider,
+  saveLoginCookie,
+} from '../core/api.js';
 import { toast } from './toast.js';
 
 const ACTIVE_KEY = 'mineradio-lite-active-account';
@@ -13,6 +23,9 @@ const state = {
   qrToken: 0,
   pollTimer: 0,
   polling: false,
+  rankingMode: 'week',
+  rankingSongs: [],
+  rankingToken: 0,
 };
 
 function readActive() { try { return localStorage.getItem(ACTIVE_KEY) === 'kugou' ? 'kugou' : 'netease'; } catch (_) { return 'netease'; } }
@@ -79,6 +92,8 @@ function renderAccountModal() {
   const add = document.getElementById('account-add');
   add.textContent = logged(other(state.active)) ? `切换到${label(other(state.active))}` : `登录${label(other(state.active))}`;
   document.getElementById('account-logout').disabled = !logged(state.active);
+  const rankingBtn = document.getElementById('account-listen-ranking');
+  if (rankingBtn) rankingBtn.disabled = !logged('netease') && !logged('kugou');
 }
 
 function setActive(provider) {
@@ -198,6 +213,164 @@ async function logoutActive() {
   if (!logged('netease') && !logged('kugou')) setVisible('account-modal', false);
 }
 
+function rankingNote(mode) {
+  if (mode === 'kugou') return '数据来自酷狗账号云端播放历史，按累计播放次数排序。';
+  return '数据来自网易云账号，排行更新可能存在短暂延迟。';
+}
+
+function normalizeRankingSong(song, index) {
+  return {
+    ...song,
+    provider: song.provider || song.source || (state.rankingMode === 'kugou' ? 'kugou' : 'netease'),
+    source: song.source || song.provider || (state.rankingMode === 'kugou' ? 'kugou' : 'netease'),
+    rank: Number(song.rank) || index + 1,
+    playCount: Number(song.playCount) || 0,
+  };
+}
+
+function setRankingListContent(node) {
+  const host = document.getElementById('listen-ranking-list');
+  if (!host) return;
+  while (host.firstChild) host.removeChild(host.firstChild);
+  host.appendChild(node);
+}
+
+function renderRankingList(songs, mode) {
+  const note = document.getElementById('listen-ranking-note');
+  if (note) note.textContent = rankingNote(mode);
+  state.rankingSongs = (songs || []).map(normalizeRankingSong);
+  if (!state.rankingSongs.length) {
+    const empty = document.createElement('div');
+    empty.className = 'empty';
+    empty.textContent = '还没有听歌排行数据';
+    setRankingListContent(empty);
+    return;
+  }
+  const fragment = document.createDocumentFragment();
+  state.rankingSongs.forEach((song, index) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'listen-ranking-item';
+    const rank = document.createElement('div');
+    rank.className = 'listen-ranking-rank';
+    rank.textContent = String(song.rank || index + 1);
+    const img = document.createElement('img');
+    img.className = 'listen-ranking-cover';
+    img.alt = '';
+    img.loading = 'lazy';
+    if (song.cover) img.src = coverUrl(song.cover, 96);
+    const main = document.createElement('div');
+    main.className = 'listen-ranking-main';
+    const name = document.createElement('div');
+    name.className = 'listen-ranking-name';
+    name.textContent = song.name || '未知歌曲';
+    const artist = document.createElement('div');
+    artist.className = 'listen-ranking-artist';
+    artist.textContent = song.artist || '未知歌手';
+    main.append(name, artist);
+    const count = document.createElement('div');
+    count.className = 'listen-ranking-count';
+    count.textContent = `${song.playCount || 0} 次`;
+    button.append(rank, img, main, count);
+    button.addEventListener('click', () => playRankingSong(index));
+    fragment.appendChild(button);
+  });
+  const host = document.getElementById('listen-ranking-list');
+  if (!host) return;
+  while (host.firstChild) host.removeChild(host.firstChild);
+  host.appendChild(fragment);
+}
+
+function updateRankingTabs() {
+  const provider = state.active === 'kugou' ? 'kugou' : 'netease';
+  document.querySelectorAll('[data-ranking-mode]').forEach((button) => {
+    const mode = button.dataset.rankingMode;
+    const visible = mode === 'kugou'
+      ? provider === 'kugou' && logged('kugou')
+      : provider === 'netease' && logged('netease');
+    button.hidden = !visible;
+    button.classList.toggle('active', mode === state.rankingMode && visible);
+  });
+}
+
+async function setRankingMode(mode) {
+  const provider = state.active === 'kugou' ? 'kugou' : 'netease';
+  if (provider === 'kugou') mode = 'kugou';
+  else mode = mode === 'all' ? 'all' : 'week';
+  state.rankingMode = mode;
+  updateRankingTabs();
+
+  const token = ++state.rankingToken;
+  const loading = document.createElement('div');
+  loading.className = 'loading';
+  loading.textContent = mode === 'kugou' ? '正在读取酷狗听歌排行…' : '正在读取听歌排行…';
+  setRankingListContent(loading);
+  const note = document.getElementById('listen-ranking-note');
+  if (note) note.textContent = rankingNote(mode);
+
+  try {
+    if (mode === 'kugou') {
+      if (!logged('kugou')) {
+        const empty = document.createElement('div');
+        empty.className = 'empty';
+        empty.textContent = '登录酷狗后可查看云端听歌排行';
+        setRankingListContent(empty);
+        state.rankingSongs = [];
+        return;
+      }
+      const data = await fetchKugouListenHistory();
+      if (token !== state.rankingToken || state.rankingMode !== mode) return;
+      if (data?.error) throw new Error(data.error);
+      renderRankingList(data.songs || [], mode);
+      return;
+    }
+    if (!logged('netease')) {
+      const empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.textContent = '登录网易云后可查看平台听歌排行';
+      setRankingListContent(empty);
+      state.rankingSongs = [];
+      return;
+    }
+    const data = await fetchListenRanking(mode);
+    if (token !== state.rankingToken || state.rankingMode !== mode) return;
+    if (data?.error) throw new Error(data.error);
+    renderRankingList(data.songs || [], mode);
+  } catch (error) {
+    if (token !== state.rankingToken || state.rankingMode !== mode) return;
+    const fail = document.createElement('div');
+    fail.className = 'error-line';
+    fail.textContent = error.message || '读取失败，请稍后重试';
+    setRankingListContent(fail);
+  }
+}
+
+function openListenRanking() {
+  if (!logged('netease') && !logged('kugou')) {
+    toast('请先登录账号');
+    return;
+  }
+  const mode = state.active === 'kugou' && logged('kugou')
+    ? 'kugou'
+    : logged('netease') ? 'week' : 'kugou';
+  setVisible('account-modal', false);
+  setVisible('listen-ranking-modal', true);
+  setRankingMode(mode);
+}
+
+function closeListenRanking() {
+  state.rankingToken += 1;
+  setVisible('listen-ranking-modal', false);
+}
+
+function playRankingSong(index) {
+  const song = state.rankingSongs[index];
+  if (!song) return;
+  closeListenRanking();
+  player.playSong(song, { enqueue: true });
+  bus.emit('navigate', 'player');
+}
+
 export const accounts = {
   get active() { return state.active; },
   status,
@@ -213,7 +386,6 @@ export function mountAccount() {
     if (logged('netease') || logged('kugou')) { renderAccountModal(); setVisible('account-modal', true); }
     else openLogin('netease');
   });
-  document.getElementById('home-login')?.addEventListener('click', () => openLogin('netease'));
   document.querySelectorAll('[data-login-provider]').forEach((button) => button.addEventListener('click', () => { state.loginProvider = button.dataset.loginProvider; refreshQr(); }));
   document.querySelectorAll('[data-account-provider]').forEach((button) => button.addEventListener('click', () => setActive(button.dataset.accountProvider)));
   document.getElementById('login-refresh')?.addEventListener('click', refreshQr);
@@ -222,7 +394,18 @@ export function mountAccount() {
   document.getElementById('account-close')?.addEventListener('click', () => setVisible('account-modal', false));
   document.getElementById('account-add')?.addEventListener('click', () => logged(other(state.active)) ? setActive(other(state.active)) : openLogin(other(state.active)));
   document.getElementById('account-logout')?.addEventListener('click', logoutActive);
+  document.getElementById('account-listen-ranking')?.addEventListener('click', openListenRanking);
+  document.getElementById('listen-ranking-close')?.addEventListener('click', closeListenRanking);
+  document.querySelectorAll('[data-ranking-mode]').forEach((button) => {
+    button.addEventListener('click', () => setRankingMode(button.dataset.rankingMode));
+  });
   document.getElementById('login-modal')?.addEventListener('click', (event) => { if (event.target.id === 'login-modal') { stopPolling(); setVisible('login-modal', false); } });
   document.getElementById('account-modal')?.addEventListener('click', (event) => { if (event.target.id === 'account-modal') setVisible('account-modal', false); });
+  document.getElementById('listen-ranking-modal')?.addEventListener('click', (event) => { if (event.target.id === 'listen-ranking-modal') closeListenRanking(); });
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return;
+    const ranking = document.getElementById('listen-ranking-modal');
+    if (ranking && !ranking.hidden) closeListenRanking();
+  });
   refreshAccounts();
 }

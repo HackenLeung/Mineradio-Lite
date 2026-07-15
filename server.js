@@ -22,6 +22,8 @@ const {
   artist_detail,
   artist_top_song,
   artist_songs,
+  artist_album,
+  album,
   like: like_song,
   likelist,
   song_like_check,
@@ -2099,9 +2101,26 @@ function mapSongRecord(s) {
     artists,
     artistId: artists[0] && artists[0].id,
     album: album.name || '',
+    albumId: album.id || '',
     cover: album.picUrl || album.coverUrl || '',
     duration: s.dt || s.duration || 0,
     fee: s.fee,
+  };
+}
+function mapAlbumRecord(a) {
+  a = a || {};
+  const artists = mapArtists(a.artists || a.ar);
+  return {
+    provider: 'netease',
+    source: 'netease',
+    type: 'album',
+    id: a.id,
+    name: a.name || '',
+    cover: a.picUrl || a.coverUrl || a.blurPicUrl || '',
+    artist: artists.map(x => x.name).join(' / ') || (a.artist && a.artist.name) || '',
+    artistId: (artists[0] && artists[0].id) || (a.artist && a.artist.id) || '',
+    size: a.size || 0,
+    publishTime: a.publishTime || 0,
   };
 }
 function mapDiscoverPlaylist(pl, tag) {
@@ -2226,10 +2245,10 @@ async function handleDiscoverHome() {
   if (result[3].status === 'fulfilled' && result[3].value) {
     const body = result[3].value.body || {};
     const raw = body.data && (body.data.dailySongs || body.data.recommend) || body.recommend || [];
+    // 网易云每日推荐通常约 30 首，保留接口完整返回，不再截成 12
     dailySongs = (Array.isArray(raw) ? raw : [])
       .map(mapSongRecord)
-      .filter(song => song.id && song.name)
-      .slice(0, 12);
+      .filter(song => song.id && song.name);
   }
 
   return {
@@ -4741,8 +4760,17 @@ const server = http.createServer(async (req, res) => {
         const b = top.body || top || {};
         rawSongs = b.songs || [];
       }
+      let rawAlbums = [];
+      try {
+        const alb = await artist_album({ id, limit: 24, offset: 0, cookie: userCookie, timestamp: Date.now() });
+        const b = alb.body || alb || {};
+        rawAlbums = b.hotAlbums || b.albums || [];
+      } catch (e) {
+        console.warn('[ArtistAlbums] failed:', e.message);
+      }
       const artist = detailBody.artist || (detailBody.data && (detailBody.data.artist || detailBody.data)) || {};
       const songs = rawSongs.map(mapSongRecord).filter(s => s.id).slice(0, limit);
+      const albums = rawAlbums.map(mapAlbumRecord).filter(a => a.id);
       sendJSON(res, {
         id,
         artist: {
@@ -4754,10 +4782,44 @@ const server = http.createServer(async (req, res) => {
           albumSize: artist.albumSize || 0,
         },
         songs,
+        albums,
         body: detailBody,
       });
     } catch (err) {
       console.error('[ArtistDetail]', err);
+      sendJSON(res, { error: err.message, songs: [] }, 500);
+    }
+    return;
+  }
+
+  // ---------- 专辑详情 ----------
+  if (pn === '/api/album/detail') {
+    try {
+      const id = url.searchParams.get('id');
+      if (!id) { sendJSON(res, { error: 'Missing album id', songs: [] }, 400); return; }
+      const resp = await album({ id, cookie: userCookie, timestamp: Date.now() });
+      const body = resp.body || resp || {};
+      const albumInfo = body.album || (body.data && body.data.album) || body.data || {};
+      const rawSongs = body.songs || (body.data && body.data.songs) || [];
+      const songs = rawSongs.map(mapSongRecord).filter(s => s.id);
+      const artistList = mapArtists(albumInfo.artists || (albumInfo.artist ? [albumInfo.artist] : []));
+      sendJSON(res, {
+        id,
+        album: {
+          id: albumInfo.id || id,
+          name: albumInfo.name || '',
+          cover: albumInfo.picUrl || albumInfo.coverUrl || albumInfo.blurPicUrl || '',
+          artist: artistList.map(a => a.name).join(' / '),
+          artistId: artistList[0] && artistList[0].id,
+          artists: artistList,
+          publishTime: albumInfo.publishTime || 0,
+          brief: albumInfo.description || albumInfo.briefDesc || '',
+          size: albumInfo.size || songs.length,
+        },
+        songs,
+      });
+    } catch (err) {
+      console.error('[AlbumDetail]', err);
       sendJSON(res, { error: err.message, songs: [] }, 500);
     }
     return;

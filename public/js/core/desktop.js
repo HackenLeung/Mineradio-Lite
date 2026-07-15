@@ -50,6 +50,12 @@ export const desktop = {
   updateCubeRemote(payload) {
     return api()?.updateCubeRemote?.(payload);
   },
+  setDesktopBehavior(payload) {
+    return api()?.setDesktopBehavior?.(payload);
+  },
+  getDesktopBehavior() {
+    return api()?.getDesktopBehavior?.();
+  },
   onCubeRemoteCommand(cb) {
     return api()?.onCubeRemoteCommand?.(cb) || (() => {});
   },
@@ -61,5 +67,14 @@ export const desktop = {
   },
   onGlobalHotkey(cb) {
     return api()?.onGlobalHotkey?.(cb) || (() => {});
+  },
+  chooseLocalMusicFolder() {
+    return api()?.chooseLocalMusicFolder?.();
+  },
+  scanLocalMusicFolder(folderPath) {
+    return api()?.scanLocalMusicFolder?.(folderPath);
+  },
+  resolveLocalMusicFile(filePath) {
+    return api()?.resolveLocalMusicFile?.(filePath);
   },
 };

@@ -3,6 +3,7 @@ import { store } from '../core/store.js';
 import { player } from '../core/player.js';
 import { coverUrl } from '../core/api.js';
 import { desktop } from '../core/desktop.js';
+import { openArtist, openAlbum } from './home.js';
 
 function fmt(sec) {
   sec = Math.max(0, Math.floor(Number(sec) || 0));
@@ -86,13 +87,56 @@ export function mountPlayerView(root) {
     }
   }
 
+  function renderSub(song) {
+    while (subEl.firstChild) subEl.removeChild(subEl.firstChild);
+    if (!song) { subEl.textContent = '搜索并点选歌曲'; return; }
+    const isNetease = (song.provider || song.source || 'netease') !== 'kugou';
+    const parts = [];
+    if (song.artist) {
+      const el = document.createElement('span');
+      el.className = 'sub-part';
+      el.textContent = song.artist;
+      if (song.artistId && isNetease) {
+        el.classList.add('artist-link');
+        el.tabIndex = 0;
+        el.setAttribute('role', 'button');
+        el.title = `查看歌手：${song.artist}`;
+        el.addEventListener('click', () => openArtist(song));
+        el.addEventListener('keydown', (event) => { if (event.key === 'Enter') openArtist(song); });
+      }
+      parts.push(el);
+    }
+    if (song.album) {
+      const el = document.createElement('span');
+      el.className = 'sub-part';
+      el.textContent = song.album;
+      if (song.albumId && isNetease) {
+        el.classList.add('album-link');
+        el.tabIndex = 0;
+        el.setAttribute('role', 'button');
+        el.title = `查看专辑：${song.album}`;
+        el.addEventListener('click', () => openAlbum(song));
+        el.addEventListener('keydown', (event) => { if (event.key === 'Enter') openAlbum(song); });
+      }
+      parts.push(el);
+    }
+    if (!parts.length) { subEl.textContent = '选择一首歌开始'; return; }
+    parts.forEach((el, i) => {
+      if (i) {
+        const sep = document.createElement('span');
+        sep.className = 'sub-sep';
+        sep.textContent = ' · ';
+        subEl.appendChild(sep);
+      }
+      subEl.appendChild(el);
+    });
+  }
+
   function renderMeta(s) {
     const song = s.now;
     syncBottombar(s);
     titleEl.textContent = song ? (song.name || '未知歌曲') : '尚未播放';
-    subEl.textContent = song
-      ? [song.artist, song.album].filter(Boolean).join(' · ') || '选择一首歌开始'
-      : '搜索并点选歌曲';
+    renderSub(song);
     if (miniTitle) miniTitle.textContent = song ? song.name : '未播放';
     if (miniArtist) miniArtist.textContent = song ? (song.artist || '') : '';
     if (trialBadge) trialBadge.hidden = !s.trial;

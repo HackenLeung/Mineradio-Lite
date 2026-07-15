@@ -1,7 +1,9 @@
-import { fetchArtistDetail, fetchDiscoverHome, fetchListenRanking, fetchPlaylistTracks, fetchPodcastPrograms, fetchWeather, coverUrl } from '../core/api.js';
+import { fetchArtistDetail, fetchAlbumDetail, fetchDiscoverHome, fetchPlaylistTracks, fetchPodcastPrograms, fetchWeather, coverUrl } from '../core/api.js';
 import { store } from '../core/store.js';
 import { player } from '../core/player.js';
 import { bus } from '../core/bus.js';
+import { localLibrary } from '../core/local-library.js';
+import { accounts } from './account.js';
 import { toast } from './toast.js';
 
 let homeData = null;
@@ -130,13 +132,32 @@ function songButton(song, index, mode = 'play') {
   const img = document.createElement('img');
   img.className = 'cover'; img.alt = ''; img.loading = 'lazy'; img.src = normalized.cover ? coverUrl(normalized.cover, 80) : '';
   const meta = text('div', 'meta', '');
-  const artist = text('div', 'artist', normalized.artist || normalized.album || '');
-  if (normalized.artistId && normalized.provider !== 'kugou') {
-    artist.classList.add('artist-link'); artist.tabIndex = 0; artist.setAttribute('role', 'button');
-    artist.addEventListener('click', (event) => { event.stopPropagation(); openArtist(normalized); });
-    artist.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.stopPropagation(); openArtist(normalized); } });
+  const sub = document.createElement('div'); sub.className = 'artist';
+  const isNetease = normalized.provider !== 'kugou';
+  const artistName = normalized.artist || '';
+  const albumName = normalized.album || '';
+  if (artistName) {
+    const artistEl = text('span', 'sub-part', artistName);
+    if (normalized.artistId && isNetease) {
+      artistEl.classList.add('artist-link'); artistEl.tabIndex = 0; artistEl.setAttribute('role', 'button');
+      artistEl.title = `查看歌手：${artistName}`;
+      artistEl.addEventListener('click', (event) => { event.stopPropagation(); openArtist(normalized); });
+      artistEl.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.stopPropagation(); openArtist(normalized); } });
+    }
+    sub.appendChild(artistEl);
   }
-  meta.append(text('div', 'name', normalized.name || '未知歌曲'), artist);
+  if (albumName) {
+    if (sub.childNodes.length) sub.appendChild(text('span', 'sub-sep', ' · '));
+    const albumEl = text('span', 'sub-part', albumName);
+    if (normalized.albumId && isNetease) {
+      albumEl.classList.add('album-link'); albumEl.tabIndex = 0; albumEl.setAttribute('role', 'button');
+      albumEl.title = `查看专辑：${albumName}`;
+      albumEl.addEventListener('click', (event) => { event.stopPropagation(); openAlbum(normalized); });
+      albumEl.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.stopPropagation(); openAlbum(normalized); } });
+    }
+    sub.appendChild(albumEl);
+  }
+  meta.append(text('div', 'name', normalized.name || '未知歌曲'), sub);
   button.append(img, meta, text('div', 'dur', String(index + 1).padStart(2, '0')));
   button.addEventListener('click', () => {
     if (mode === 'replace' && homeData?.dailySongs) {
@@ -181,29 +202,63 @@ function renderHistory() {
   });
 }
 
+function renderLocalHome() {
+  const snap = localLibrary.snapshot();
+  const title = document.getElementById('home-local-title');
+  const meta = document.getElementById('home-local-meta');
+  const host = document.getElementById('home-local-folders');
+  if (title) title.textContent = snap.total ? '本地音乐' : '导入本地';
+  if (meta) {
+    meta.textContent = snap.total
+      ? `${snap.total} 首 · ${snap.folders.length} 个文件夹`
+      : (snap.loading ? '扫描中…' : '导入文件夹');
+  }
+  setFeatureCover('home-local-cover', localLibrary.folderCover(snap.folders[0]) || snap.songs[0]?.cover || '');
+  clear(host);
+  show('home-local-section', snap.folders.length > 0);
+  snap.folders.slice(0, 6).forEach((folder) => {
+    host?.appendChild(mediaCard(
+      { name: folder.name, cover: localLibrary.folderCover(folder) },
+      `${(folder.songs || []).length} 首本地`,
+      () => {
+        if (!folder.songs?.length) return;
+        store.setQueue(folder.songs.map((song) => ({ ...song })), 0);
+        store.playAt(0);
+        bus.emit('navigate', 'player');
+      },
+    ));
+  });
+}
+
 function renderHome(data) {
   homeData = data;
   const daily = Array.isArray(data?.dailySongs) ? data.dailySongs : [];
   const playlists = Array.isArray(data?.playlists) ? data.playlists : [];
   const podcasts = Array.isArray(data?.podcasts) ? data.podcasts : [];
-  document.getElementById('home-summary').textContent = data?.loggedIn
-    ? `已同步 ${daily.length} 首每日推荐、${playlists.length} 个歌单和 ${podcasts.length} 个播客`
-    : '未登录 · 可直接搜索公开曲库';
-  show('home-empty', !data?.loggedIn);
+  const accountLoggedIn = accounts.isLoggedIn('netease') || accounts.isLoggedIn('kugou');
+  const loggedIn = !!(data?.loggedIn || accountLoggedIn);
+  const localSnap = localLibrary.snapshot();
+  const hasContent = daily.length > 0 || playlists.length > 0 || podcasts.length > 0 || localSnap.total > 0;
+
+  document.getElementById('home-summary').textContent = loggedIn
+    ? (hasContent
+      ? `已同步 ${daily.length} 首每日推荐、${playlists.length} 个歌单和 ${podcasts.length} 个播客${localSnap.total ? ` · 本地 ${localSnap.total} 首` : ''}`
+      : '已登录 · 暂未获取到推荐内容，可点刷新重试')
+    : (localSnap.total ? `未登录 · 本地已导入 ${localSnap.total} 首` : '未登录 · 可直接搜索公开曲库或导入本地音乐');
+
   show('home-daily-section', daily.length > 0); show('home-playlists-section', playlists.length > 0); show('home-podcasts-section', podcasts.length > 0);
 
-  document.getElementById('home-library-meta').textContent = playlists.length ? `${playlists.length} 个歌单` : '登录后同步';
+  document.getElementById('home-library-meta').textContent = playlists.length ? `${playlists.length} 个歌单` : (loggedIn ? '暂无歌单' : '登录后同步');
   document.getElementById('home-daily-title').textContent = daily[0]?.name || '每日推荐';
-  document.getElementById('home-daily-meta').textContent = daily.length ? `${daily.length} 首 · 点击播放今日队列` : '登录后获取';
+  document.getElementById('home-daily-meta').textContent = daily.length ? `${daily.length} 首 · 点击播放今日队列` : (loggedIn ? '暂无推荐' : '登录后获取');
   document.getElementById('home-single-title').textContent = daily[1]?.name || daily[0]?.name || '等待推荐';
   document.getElementById('home-single-meta').textContent = daily[1]?.artist || daily[0]?.artist || '今日单曲';
   setFeatureCover('home-library-cover', playlists[0]?.cover);
   setFeatureCover('home-daily-cover', daily[0]?.cover);
   setFeatureCover('home-single-cover', daily[1]?.cover || daily[0]?.cover);
   const now = store.get().now;
-  document.getElementById('home-continue-title').textContent = now?.name || '当前没有歌曲';
-  document.getElementById('home-continue-meta').textContent = now ? `${now.artist || '未知歌手'} · 当前队列 ${store.get().currentIdx + 1}/${store.get().queue.length}` : '打开正在播放';
-  setFeatureCover('home-continue-cover', now?.cover);
+  // 保留继续听信息在 store 监听里更新；这里补本地卡片
+  renderLocalHome();
   const dailyHost = document.getElementById('home-daily'); clear(dailyHost);
   daily.slice(0, 5).forEach((song, index) => dailyHost.appendChild(mediaCard(song, song.artist || '每日推荐', () => {
     const songs = daily.map(normalizeSong); store.setQueue(songs, index); store.playAt(index); bus.emit('navigate', 'player');
@@ -391,26 +446,81 @@ export async function openPlaylist(item) {
   } catch (error) { clear(host); host.append(text('div', 'error-line', error.message || '歌单读取失败')); }
 }
 
+function detailSection(title, meta) {
+  const head = document.createElement('div'); head.className = 'section-head detail-section-head';
+  head.append(text('h2', '', title));
+  if (meta) head.append(text('span', 'detail-section-meta', meta));
+  return head;
+}
+
 export async function openArtist(song) {
-  if (!song?.artistId) { toast('当前歌曲没有可用的歌手主页'); return; }
+  const artistId = song?.artistId || song?.id;
+  if (!artistId) { toast('当前歌曲没有可用的歌手主页'); return; }
   const host = document.getElementById('detail-content'); clear(host); host.append(text('div', 'loading', '正在读取歌手主页…'));
   bus.emit('navigate', 'detail');
   try {
-    const data = await fetchArtistDetail(song.artistId, 48);
+    const data = await fetchArtistDetail(artistId, 48);
     const artist = data.artist || {};
     const songs = (data.songs || []).map(normalizeSong);
+    const albums = Array.isArray(data.albums) ? data.albums : [];
     const meta = { name: artist.name || song.artist, cover: artist.avatar || song.cover };
-    clear(host); host.append(detailHero(meta, 'ARTIST', `${songs.length} 首热门歌曲`));
+    const stats = [];
+    if (artist.musicSize) stats.push(`${artist.musicSize} 首歌曲`);
+    if (artist.albumSize) stats.push(`${artist.albumSize} 张专辑`);
+    clear(host); host.append(detailHero(meta, 'ARTIST', stats.join(' · ') || `${songs.length} 首热门歌曲`));
     if (artist.brief) host.append(text('p', 'detail-description', artist.brief));
     if (songs.length) {
       const playAll = text('button', 'chip active', '播放热门歌曲'); playAll.type = 'button';
       playAll.addEventListener('click', () => { store.setQueue(songs, 0); store.playAt(0); bus.emit('navigate', 'player'); });
       host.appendChild(playAll);
+      host.append(detailSection('热门歌曲', `${songs.length} 首`));
+      const list = document.createElement('div'); list.className = 'result-list song-list';
+      songs.forEach((item, index) => list.appendChild(songButton(item, index)));
+      host.appendChild(list);
     }
-    const list = document.createElement('div'); list.className = 'result-list song-list';
-    songs.forEach((item, index) => list.appendChild(songButton(item, index)));
-    host.appendChild(list);
+    if (albums.length) {
+      host.append(detailSection('专辑', `${albums.length} 张`));
+      const grid = document.createElement('div'); grid.className = 'card-grid';
+      albums.forEach((item) => grid.appendChild(mediaCard(item, albumSubtitle(item), () => openAlbum(item))));
+      host.appendChild(grid);
+    }
+    if (!songs.length && !albums.length) host.append(text('div', 'empty', '暂无歌手内容'));
   } catch (error) { clear(host); host.append(text('div', 'error-line', error.message || '歌手主页读取失败')); }
+}
+
+function albumSubtitle(item) {
+  const year = item.publishTime ? new Date(item.publishTime).getFullYear() : '';
+  return [year, item.size ? `${item.size} 首` : ''].filter(Boolean).join(' · ') || '专辑';
+}
+
+export async function openAlbum(item) {
+  const albumId = item?.albumId || item?.id;
+  if (!albumId) { toast('当前歌曲没有可用的专辑'); return; }
+  const host = document.getElementById('detail-content'); clear(host); host.append(text('div', 'loading', '正在读取专辑…'));
+  bus.emit('navigate', 'detail');
+  try {
+    const data = await fetchAlbumDetail(albumId);
+    const album = data.album || {};
+    const songs = (data.songs || []).map(normalizeSong);
+    const meta = {
+      name: album.name || item.album || item.name,
+      cover: album.cover || item.cover,
+    };
+    const year = album.publishTime ? new Date(album.publishTime).getFullYear() : '';
+    const info = [album.artist, year, songs.length ? `${songs.length} 首` : ''].filter(Boolean).join(' · ');
+    clear(host); host.append(detailHero(meta, 'ALBUM', info || `${songs.length} 首歌曲`));
+    if (album.brief) host.append(text('p', 'detail-description', album.brief));
+    if (songs.length) {
+      const playAll = text('button', 'chip active', '播放全部'); playAll.type = 'button';
+      playAll.addEventListener('click', () => { store.setQueue(songs, 0); store.playAt(0); bus.emit('navigate', 'player'); });
+      host.appendChild(playAll);
+      const list = document.createElement('div'); list.className = 'result-list song-list';
+      songs.forEach((song, index) => list.appendChild(songButton(song, index)));
+      host.appendChild(list);
+    } else {
+      host.append(text('div', 'empty', '专辑暂无可播放歌曲'));
+    }
+  } catch (error) { clear(host); host.append(text('div', 'error-line', error.message || '专辑读取失败')); }
 }
 
 async function openPodcast(item) {
@@ -429,17 +539,16 @@ async function openPodcast(item) {
 async function loadHome() {
   const summary = document.getElementById('home-summary'); summary.textContent = '正在读取你的音乐内容…';
   try { renderHome(await fetchDiscoverHome()); }
-  catch (error) { summary.textContent = error.message || '首页内容读取失败'; renderHome({ loggedIn: false }); }
-}
-
-async function loadRanking(type = 'week') {
-  const host = document.getElementById('home-ranking'); clear(host);
-  try {
-    const data = await fetchListenRanking(type);
-    const songs = data.songs || [];
-    show('home-ranking-section', songs.length > 0);
-    songs.slice(0, 10).forEach((song, index) => host.appendChild(songButton(song, index)));
-  } catch (_) { show('home-ranking-section', false); }
+  catch (error) {
+    summary.textContent = error.message || '首页内容读取失败';
+    // 接口失败时不要误判成“未登录”，账号状态以 account 模块为准
+    renderHome({
+      loggedIn: accounts.isLoggedIn('netease') || accounts.isLoggedIn('kugou'),
+      dailySongs: [],
+      playlists: [],
+      podcasts: [],
+    });
+  }
 }
 
 export function mountHome() {
@@ -453,25 +562,30 @@ export function mountHome() {
   document.getElementById('home-single-card')?.addEventListener('click', () => {
     const song = homeData?.dailySongs?.[1] || homeData?.dailySongs?.[0]; if (!song) return; player.playSong(normalizeSong(song), { enqueue: true }); bus.emit('navigate', 'player');
   });
-  document.getElementById('home-continue-card')?.addEventListener('click', () => bus.emit('navigate', 'player'));
-  document.getElementById('ranking-week')?.addEventListener('click', () => {
-    document.getElementById('ranking-week').classList.add('active'); document.getElementById('ranking-all').classList.remove('active'); loadRanking('week');
+  document.getElementById('home-local-card')?.addEventListener('click', async () => {
+    const snap = localLibrary.snapshot();
+    if (!snap.total) {
+      await localLibrary.importFolder();
+      return;
+    }
+    const songs = localLibrary.filteredSongs();
+    if (!songs.length) return;
+    store.setQueue(songs.map((song) => ({ ...song })), 0);
+    store.playAt(0);
+    bus.emit('navigate', 'player');
   });
-  document.getElementById('ranking-all')?.addEventListener('click', () => {
-    document.getElementById('ranking-all').classList.add('active'); document.getElementById('ranking-week').classList.remove('active'); loadRanking('all');
-  });
+  document.getElementById('home-local-more')?.addEventListener('click', () => bus.emit('navigate', 'library'));
   document.getElementById('play-daily')?.addEventListener('click', () => {
     const songs = (homeData?.dailySongs || []).map(normalizeSong); if (!songs.length) return;
     store.setQueue(songs, 0); store.playAt(0); bus.emit('navigate', 'player'); toast(`已载入 ${songs.length} 首每日推荐`);
   });
   document.getElementById('clear-search-history')?.addEventListener('click', () => { localStorage.removeItem('mineradio-lite-search-history'); renderHistory(); });
   bus.on('search-history-changed', renderHistory);
-  bus.on('account-changed', () => { loadHome(); loadRanking('week'); });
+  bus.on('account-changed', () => { loadHome(); });
+  bus.on('local-library-changed', () => { renderLocalHome(); });
   bus.on('store', (state) => {
-    document.getElementById('home-continue-title').textContent = state.now?.name || '当前没有歌曲';
-    document.getElementById('home-continue-meta').textContent = state.now ? `${state.now.artist || '未知歌手'} · 当前队列 ${state.currentIdx + 1}/${state.queue.length}` : '打开正在播放';
-    setFeatureCover('home-continue-cover', state.now?.cover);
+    // 继续听入口已改为本地卡片；这里仅刷新摘要时用
   });
   renderClock(); window.setInterval(renderClock, 30000); loadWeather();
-  renderHistory(); loadHome(); loadRanking('week');
+  renderHistory(); loadHome();
 }

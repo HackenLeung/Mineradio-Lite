@@ -37,6 +37,10 @@ async function postJson(url, body) {
 export function coverUrl(upstream, size) {
   if (!upstream) return '';
   let u = String(upstream);
+  // 本地媒体 / data / blob 已是可直接使用的地址，不再走封面代理
+  if (/^(data:|blob:)/i.test(u) || /\/api\/local-media(?:\?|$)/i.test(u) || /^https?:\/\/127\.0\.0\.1(?::\d+)?\/api\/local-media(?:\?|$)/i.test(u)) {
+    return u;
+  }
   // 网易云尺寸拼在上游 URL：param=NxN
   if (size && /music\.126\.net|nosdn\.127|jdn/i.test(u) && !/[?&]param=/.test(u)) {
     u += (u.includes('?') ? '&' : '?') + `param=${size}y${size}`;
@@ -46,7 +50,12 @@ export function coverUrl(upstream, size) {
 
 export function audioProxyUrl(url) {
   if (!url) return '';
-  return `/api/audio?url=${encodeURIComponent(url)}`;
+  const u = String(url);
+  // 本地媒体本身已在本机服务，避免再套一层 /api/audio 代理
+  if (/\/api\/local-media(?:\?|$)/i.test(u) || /^https?:\/\/127\.0\.0\.1(?::\d+)?\/api\/local-media(?:\?|$)/i.test(u) || /^(blob:|data:)/i.test(u)) {
+    return u;
+  }
+  return `/api/audio?url=${encodeURIComponent(u)}`;
 }
 
 export async function fetchAppVersion() {
@@ -99,8 +108,17 @@ export async function fetchArtistDetail(id, limit = 36) {
   return getJson(`/api/artist/detail?${q}`);
 }
 
+export async function fetchAlbumDetail(id) {
+  const q = new URLSearchParams({ id: String(id || '') });
+  return getJson(`/api/album/detail?${q}`);
+}
+
 export async function fetchListenRanking(type = 'week') {
   return getJson(`/api/listen/ranking?type=${type === 'all' ? 'all' : 'week'}&t=${Date.now()}`);
+}
+
+export async function fetchKugouListenHistory() {
+  return getJson(`/api/kugou/listen/history?t=${Date.now()}`);
 }
 
 export async function fetchPodcastPrograms(id, limit = 30) {
@@ -147,7 +165,18 @@ export async function searchKugou(keywords, limit = 20) {
  */
 export async function fetchSongUrl(song, quality = 'hires') {
   if (!song) throw new Error('NO_SONG');
-  const provider = song.provider || song.source || 'netease';
+  const provider = song.provider || song.source || song.type || 'netease';
+  if (provider === 'local' || song.type === 'local') {
+    const url = song.localUrl || song.url || '';
+    return {
+      provider: 'local',
+      url,
+      playable: !!url,
+      trial: false,
+      level: 'local',
+      raw: { local: true },
+    };
+  }
   if (provider === 'kugou') {
     const hash = song.hash || song.id;
     // 酷狗音质键与网易云不同；把 Lite 统一 quality 粗映射到酷狗档
@@ -190,6 +219,11 @@ export async function fetchSongUrl(song, quality = 'hires') {
 
 export async function fetchLyric(song) {
   if (!song) return { lyric: '', tlyric: '', yrc: '' };
+  if ((song.provider || song.source || song.type) === 'local') {
+    const localLyric = String(song.localLyricText || '').trim();
+    if (localLyric) return { lyric: localLyric, tlyric: '', yrc: '', provider: 'local' };
+    return { lyric: '', tlyric: '', yrc: '', provider: 'local' };
+  }
   if ((song.provider || song.source) === 'kugou') {
     const hash = song.hash || song.id;
     const q = new URLSearchParams({ hash: String(hash || '') });
@@ -197,6 +231,7 @@ export async function fetchLyric(song) {
     const data = await getJson(`/api/kugou/lyric?${q}`);
     return { lyric: (data && data.lyric) || '', tlyric: '', yrc: '', provider: 'kugou' };
   }
+  if (!song.id) return { lyric: '', tlyric: '', yrc: '' };
   const data = await getJson(`/api/lyric?id=${encodeURIComponent(song.id)}`);
   return {
     lyric: (data && data.lyric) || '',

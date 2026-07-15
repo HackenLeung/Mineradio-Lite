@@ -28,11 +28,14 @@
   border-radius: 999px;
   font-size: 12px;
   color: var(--fg-dim);
+  transition: color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
 }
+.tabs button:hover { color: var(--fg); }
 .tabs button.active {
   background: rgba(77, 182, 172, 0.18);
   color: var(--accent-2);
 }
+.tabs button:active { transform: scale(.96); }
 
 .song-list { display: flex; flex-direction: column; gap: 4px; }
 .song-item {
@@ -45,11 +48,14 @@
   border: 1px solid transparent;
   text-align: left;
   width: 100%;
+  transition: background var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
 }
 .song-item:hover {
   background: rgba(255, 255, 255, 0.04);
   border-color: var(--line);
+  transform: translateX(2px);
 }
+.song-item:active { transform: scale(.99); }
 .song-item.active {
   background: rgba(77, 182, 172, 0.12);
   border-color: rgba(77, 182, 172, 0.28);
@@ -75,8 +81,15 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.song-item .artist-link,
+.song-item .album-link { cursor: pointer; transition: color var(--dur-fast) var(--ease); }
 .song-item .artist-link:hover,
-.song-item .artist-link:focus { color: var(--accent-2); outline: none; text-decoration: underline; }
+.song-item .artist-link:focus,
+.song-item .album-link:hover,
+.song-item .album-link:focus { color: var(--accent-2); outline: none; text-decoration: underline; }
+.song-item .sub-sep { opacity: .6; }
+.detail-section-head { margin: 28px 0 12px; }
+.detail-section-meta { color: var(--fg-mute); font-size: 11px; }
 .song-item .dur {
   font-size: 11px;
   color: var(--fg-mute);
@@ -99,16 +112,20 @@
   align-items: center;
   justify-content: center;
   color: var(--fg);
+  transition: background var(--dur-fast) var(--ease), color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease), box-shadow var(--dur-fast) var(--ease), filter var(--dur-fast) var(--ease);
 }
 .icon-btn:hover { background: rgba(255, 255, 255, 0.08); }
+.icon-btn:active { transform: scale(.94); }
 .icon-btn.primary {
   width: 48px;
   height: 48px;
   background: linear-gradient(180deg, var(--accent-2), var(--accent));
   color: #06201d;
   box-shadow: 0 8px 22px rgba(77, 182, 172, 0.35);
+  transition: transform var(--dur-fast) var(--ease), filter var(--dur-fast) var(--ease), box-shadow var(--dur) var(--ease);
 }
-.icon-btn.primary:hover { filter: brightness(1.05); }
+.icon-btn.primary:hover { filter: brightness(1.05); transform: translateY(-1px); box-shadow: 0 12px 28px rgba(77, 182, 172, 0.42); }
+.icon-btn.primary:active { transform: scale(.95); }
 .icon-btn svg,.round-entry svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}.icon-btn.icon-fill svg,.icon-btn.primary svg{fill:currentColor;stroke:none}.round-entry{display:inline-flex;align-items:center;justify-content:center}.round-entry svg{width:18px;height:18px}.icon-btn .pause-symbol{display:none}.icon-btn[data-playing="1"] .play-symbol{display:none}.icon-btn[data-playing="1"] .pause-symbol{display:block}.icon-btn.liked{color:#ff6f87;background:rgba(255,86,112,.1)}.icon-btn.liked svg{fill:currentColor}.lyrics-word{font-weight:800;font-size:15px}.rate-btn{height:34px;min-width:54px;padding:0 8px;border-radius:10px;color:var(--fg-dim);font-size:11px}.rate-btn:hover,.rate-btn.active{background:rgba(255,255,255,.08);color:#fff}
 /* 播放模式：图标随 data-mode / class 变化，激活时略提亮 */
 #btn-mode{color:var(--fg-dim)}#btn-mode:hover,#btn-mode.mode-loop,#btn-mode.mode-single,#btn-mode.mode-shuffle{color:#fff}
@@ -123,8 +140,10 @@
   background: rgba(255, 255, 255, 0.03);
   color: var(--fg-dim);
   font-size: 12px;
+  transition: color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), background var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease);
 }
 .chip:hover { color: var(--fg); border-color: var(--line-strong); }
+.chip:active { transform: scale(.96); }
 .chip.active {
   color: var(--accent-2);
   border-color: rgba(77, 182, 172, 0.45);

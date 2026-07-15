@@ -41,8 +41,22 @@
       <div class="playlist-dock">
         <div class="playlist-edge" aria-hidden="true"></div>
         <aside id="side" class="side">
-          <div class="panel-tabs"><span class="active">播放队列 <b id="queue-count">0</b></span><button type="button" data-route="library">我的歌单</button></div>
-          <div id="queue-list" class="side-body song-list" data-mode="queue"></div>
+          <div class="panel-tabs">
+            <button type="button" class="panel-tab active" data-side-tab="queue">播放队列 <b id="queue-count">0</b></button>
+            <button type="button" class="panel-tab" data-side-tab="local">本地库</button>
+            <button type="button" class="panel-tab" data-side-tab="library" data-route="library">我的歌单</button>
+          </div>
+          <div id="queue-pane" class="side-pane active">
+            <div id="queue-list" class="side-body song-list" data-mode="queue"></div>
+          </div>
+          <div id="local-pane" class="side-pane" hidden>
+            <div class="local-side-toolbar">
+              <div id="side-local-chip" class="queue-chip">未导入本地文件夹</div>
+              <button type="button" id="side-local-import" class="chip">导入</button>
+            </div>
+            <input id="side-local-search" class="field side-local-search" type="search" placeholder="搜索本地音乐…" />
+            <div id="side-local-list" class="side-body local-side-list"></div>
+          </div>
           <div class="side-foot"><span id="app-version-label"></span></div>
         </aside>
       </div>
@@ -60,14 +74,13 @@
                 <button type="button" id="home-library-card" class="home-feature-card"><span>歌单</span><strong>我的歌单</strong><small id="home-library-meta">登录后同步</small><div id="home-library-cover" class="feature-cover"></div></button>
                 <button type="button" id="home-daily-card" class="home-feature-card"><span>每日</span><strong id="home-daily-title">每日推荐</strong><small id="home-daily-meta">点击播放今日队列</small><div id="home-daily-cover" class="feature-cover"></div></button>
                 <button type="button" id="home-single-card" class="home-feature-card"><span>单曲</span><strong id="home-single-title">等待推荐</strong><small id="home-single-meta">今日单曲</small><div id="home-single-cover" class="feature-cover"></div></button>
-                <button type="button" id="home-continue-card" class="home-feature-card"><span>继续听</span><strong id="home-continue-title">当前没有歌曲</strong><small id="home-continue-meta">打开正在播放</small><div id="home-continue-cover" class="feature-cover"></div></button>
+                <button type="button" id="home-local-card" class="home-feature-card"><span>本地</span><strong id="home-local-title">本地音乐</strong><small id="home-local-meta">导入文件夹</small><div id="home-local-cover" class="feature-cover"></div></button>
               </section>
               <section id="home-playlists-section" class="home-section" hidden><div class="section-head"><h2>我的歌单</h2><button type="button" data-route="library">查看全部</button></div><div id="home-playlists" class="home-playlist-grid"></div></section>
+              <section id="home-local-section" class="home-section" hidden><div class="section-head"><h2>本地音乐</h2><button type="button" id="home-local-more">查看全部</button></div><div id="home-local-folders" class="home-playlist-grid"></div></section>
               <section id="home-daily-section" class="home-section" hidden><div class="section-head"><h2>接着听</h2><button type="button" id="play-daily">播放全部</button></div><div id="home-daily" class="home-listen-rail"></div></section>
               <section id="home-podcasts-section" class="home-section" hidden><div class="section-head"><h2>热门播客</h2></div><div id="home-podcasts" class="home-listen-rail"></div></section>
-              <section id="home-ranking-section" hidden><div id="home-ranking"></div></section>
               <section id="home-history-section" class="home-section compact" hidden><div class="section-head"><h2>最近搜索</h2><button type="button" id="clear-search-history">清空</button></div><div id="search-history" class="keyword-row"></div></section>
-              <div id="home-empty" class="home-empty" hidden><strong>登录后同步每日推荐和私人歌单</strong><span>未登录也可以直接搜索公开曲库。</span><button type="button" id="home-login" class="chip active">登录账号</button></div>
             </div>
           </div>
         </section>
@@ -83,6 +96,31 @@
             <div id="library-empty" class="home-empty" hidden></div>
             <section id="library-created-section" class="content-section" hidden><div class="section-head"><h2>我创建的歌单</h2></div><div id="library-created" class="card-grid"></div></section>
             <section id="library-saved-section" class="content-section" hidden><div class="section-head"><h2>我收藏的歌单</h2></div><div id="library-saved" class="card-grid"></div></section>
+
+            <section id="local-library-section" class="content-section local-library-section">
+              <div class="section-head">
+                <div>
+                  <h2>本地音乐</h2>
+                  <p id="local-library-chip" class="detail-section-meta">未导入</p>
+                </div>
+                <div class="local-library-actions">
+                  <button type="button" id="local-library-play-all" class="chip">播放全部</button>
+                  <button type="button" id="local-library-import" class="chip active">导入文件夹</button>
+                </div>
+              </div>
+              <div class="local-library-toolbar">
+                <input id="local-library-search" class="field local-library-search" type="search" placeholder="搜索本地音乐、文件夹…" />
+              </div>
+              <div id="local-library-empty" class="empty">还没有本地库。点击“导入文件夹”选择音乐目录。</div>
+              <section id="local-library-folders-section" hidden>
+                <div class="section-head compact"><h3>文件夹</h3></div>
+                <div id="local-library-folders" class="card-grid"></div>
+              </section>
+              <section id="local-library-songs-section" hidden>
+                <div class="section-head compact"><h3 id="local-library-songs-title">全部本地</h3></div>
+                <div id="local-library-songs" class="result-list song-list"></div>
+              </section>
+            </section>
           </div>
         </section>
 
@@ -96,9 +134,16 @@
 
         <section id="settings-view" class="page-view" data-view="settings" aria-label="设置">
           <div class="page-scroll settings-page"><div class="settings-head"><span class="eyebrow">MINERADIO SETTINGS</span><h1>设置</h1><p>播放器、音源与桌面功能</p></div><div class="settings-grid">
-            <section class="settings-card"><h2>播放</h2><label>默认音质<select id="setting-quality"></select></label><label>播放倍速<input id="setting-rate" class="slider" type="range" min="0.5" max="2" step="0.05"><output id="setting-rate-value">1.00×</output></label><label>默认音量<input id="setting-volume" class="slider" type="range" min="0" max="1" step="0.01"><output id="setting-volume-value">85%</output></label><label class="setting-switch"><span><strong>智能过渡</strong><small>切歌时淡出旧曲并淡入新曲</small></span><input id="setting-smart-transition" type="checkbox"></label></section>
-            <section class="settings-card"><h2>搜索与账号</h2><label>默认搜索源<select id="setting-provider"><option value="netease">网易云</option><option value="kugou">酷狗</option></select></label><button type="button" id="setting-account" class="setting-action">账号中心</button><button type="button" id="setting-library" class="setting-action">我的歌单</button></section>
-            <section class="settings-card"><h2>桌面</h2><label class="setting-switch"><span>桌面歌词</span><input id="setting-desktop-lyrics" type="checkbox"></label><label class="setting-switch"><span><strong>魔方遥控</strong><small>悬浮上下首/暂停/音量/歌词；开启后隐藏托盘</small></span><input id="setting-cube-remote" type="checkbox"></label><button type="button" id="setting-fullscreen" class="setting-action">切换全屏</button><p>魔方开启时托盘会隐藏，可用魔方打开主程序。桌面歌词悬停可锁定/解锁。</p></section>
+            <section class="settings-card"><h2>播放</h2><label class="setting-select-row"><span>默认音质</span><div class="setting-select" data-setting-select="quality"><button type="button" class="setting-select-trigger" id="setting-quality-trigger" aria-haspopup="listbox" aria-expanded="false"><span id="setting-quality-label">Hi-Res</span></button><div class="setting-select-menu" id="setting-quality-menu" role="listbox" hidden></div><select id="setting-quality" class="setting-select-native" tabindex="-1" aria-hidden="true"></select></div></label><label>播放倍速<input id="setting-rate" class="slider" type="range" min="0.5" max="2" step="0.05"><output id="setting-rate-value">1.00×</output></label><label>默认音量<input id="setting-volume" class="slider" type="range" min="0" max="1" step="0.01"><output id="setting-volume-value">85%</output></label><label class="setting-switch"><span><strong>智能过渡</strong><small>切歌时淡出旧曲并淡入新曲</small></span><input id="setting-smart-transition" type="checkbox"></label></section>
+            <section class="settings-card"><h2>搜索与账号</h2><label class="setting-select-row"><span>默认搜索源</span><div class="setting-select" data-setting-select="provider"><button type="button" class="setting-select-trigger" id="setting-provider-trigger" aria-haspopup="listbox" aria-expanded="false"><span id="setting-provider-label">网易云</span></button><div class="setting-select-menu" id="setting-provider-menu" role="listbox" hidden></div><select id="setting-provider" class="setting-select-native" tabindex="-1" aria-hidden="true"><option value="netease">网易云</option><option value="kugou">酷狗</option></select></div></label><button type="button" id="setting-account" class="setting-action">账号中心</button><button type="button" id="setting-library" class="setting-action">我的歌单</button></section>
+            <section class="settings-card">
+              <h2>音乐遥控器</h2>
+              <label class="setting-switch"><span>桌面歌词</span><input id="setting-desktop-lyrics" type="checkbox"></label>
+              <label class="setting-switch"><span><strong>音乐遥控器</strong><small>悬浮控制播放；开启后隐藏托盘</small></span><input id="setting-cube-remote" type="checkbox"></label>
+              <button type="button" id="setting-remote-skins" class="setting-action">选择遥控器样式</button>
+              <button type="button" id="setting-fullscreen" class="setting-action">切换全屏</button>
+              <p>开启后托盘会隐藏，可用遥控器打开主程序。当前样式：<b id="setting-remote-skin-label">魔方遥控器</b></p>
+            </section>
           </div></div>
         </section>
       </main>
@@ -131,7 +176,88 @@
       <div class="modal-head"><div><span class="eyebrow">ACCOUNT</span><h2 id="account-title">账号中心</h2></div><button type="button" id="account-close" class="modal-close" aria-label="关闭">×</button></div>
       <div id="account-providers" class="provider-switch"><button type="button" data-account-provider="netease">网易云</button><button type="button" data-account-provider="kugou">酷狗</button></div>
       <div class="account-profile"><img id="account-avatar" alt="" /><div><strong id="account-name">未登录</strong><span id="account-vip">普通用户</span></div></div>
-      <div class="modal-actions"><button type="button" id="account-add" class="chip">登录另一平台</button><button type="button" id="account-logout" class="chip danger">退出当前账号</button></div>
+      <div class="account-modal-actions">
+        <button type="button" id="account-listen-ranking" class="chip account-listen-ranking">听歌排行</button>
+        <button type="button" id="account-add" class="chip">登录另一平台</button>
+        <button type="button" id="account-logout" class="chip danger">退出当前账号</button>
+      </div>
+    </section>
+  </div>
+  <div id="listen-ranking-modal" class="modal-mask" hidden>
+    <section class="modal-card listen-ranking-card" role="dialog" aria-modal="true" aria-labelledby="listen-ranking-title">
+      <div class="modal-head"><div><span class="eyebrow">LISTEN RANKING</span><h2 id="listen-ranking-title">听歌排行</h2></div><button type="button" id="listen-ranking-close" class="modal-close" aria-label="关闭">×</button></div>
+      <div class="listen-ranking-tabs provider-switch">
+        <button type="button" id="listen-ranking-week" data-ranking-mode="week">网易周榜</button>
+        <button type="button" id="listen-ranking-all" data-ranking-mode="all">网易总榜</button>
+        <button type="button" id="listen-ranking-kugou" data-ranking-mode="kugou">酷狗排行</button>
+      </div>
+      <p id="listen-ranking-note" class="listen-ranking-note">数据来自当前登录账号</p>
+      <div id="listen-ranking-list" class="listen-ranking-list"><div class="loading">正在读取听歌排行…</div></div>
+    </section>
+  </div>
+  <div id="remote-skin-modal" class="modal-mask" hidden>
+    <section class="modal-card remote-skin-card" role="dialog" aria-modal="true" aria-labelledby="remote-skin-title">
+      <div class="modal-head">
+        <div>
+          <span class="eyebrow">MUSIC REMOTE</span>
+          <h2 id="remote-skin-title">音乐遥控器</h2>
+        </div>
+        <button type="button" id="remote-skin-close" class="modal-close" aria-label="关闭">×</button>
+      </div>
+      <div class="remote-skin-head">
+        <div>
+          <strong>选择样式</strong>
+          <p>可切换多种悬浮遥控器外观，开启后托盘会隐藏。</p>
+        </div>
+        <label class="setting-switch remote-skin-toggle">
+          <span>开启</span>
+          <input id="remote-skin-enabled" type="checkbox" />
+        </label>
+      </div>
+      <div id="remote-skin-grid" class="remote-skin-grid" role="listbox" aria-label="遥控器样式">
+        <button type="button" class="remote-skin-item" data-remote-skin="cube" role="option" aria-selected="true">
+          <div class="remote-skin-preview skin-preview-cube" aria-hidden="true">
+            <span class="preview-diamond">
+              <span class="preview-pad up"></span>
+              <span class="preview-pad left"></span>
+              <span class="preview-pad center"></span>
+              <span class="preview-pad right"></span>
+              <span class="preview-pad down"></span>
+            </span>
+          </div>
+          <span class="remote-skin-name">魔方遥控器</span>
+          <span class="remote-skin-check" aria-hidden="true">✓</span>
+        </button>
+        <button type="button" class="remote-skin-item" data-remote-skin="bar" role="option" aria-selected="false">
+          <div class="remote-skin-preview skin-preview-bar" aria-hidden="true">
+            <span class="preview-cover"></span>
+            <span class="preview-lines"></span>
+            <span class="preview-dots"></span>
+          </div>
+          <span class="remote-skin-name">条形遥控器</span>
+          <span class="remote-skin-check" aria-hidden="true">✓</span>
+        </button>
+        <button type="button" class="remote-skin-item" data-remote-skin="moon" role="option" aria-selected="false">
+          <div class="remote-skin-preview skin-preview-moon" aria-hidden="true">
+            <span class="preview-disc"></span>
+            <span class="preview-text"></span>
+          </div>
+          <span class="remote-skin-name">星稀月白</span>
+          <span class="remote-skin-check" aria-hidden="true">✓</span>
+        </button>
+        <button type="button" class="remote-skin-item is-soon" data-remote-skin="azure" role="option" aria-selected="false" disabled>
+          <span class="remote-skin-badge">NEW</span>
+          <div class="remote-skin-preview skin-preview-soon" aria-hidden="true"></div>
+          <span class="remote-skin-name">远山蓝黛</span>
+          <span class="remote-skin-soon">敬请期待</span>
+        </button>
+        <button type="button" class="remote-skin-item is-soon" data-remote-skin="gramo" role="option" aria-selected="false" disabled>
+          <span class="remote-skin-badge">NEW</span>
+          <div class="remote-skin-preview skin-preview-soon alt" aria-hidden="true"></div>
+          <span class="remote-skin-name">复古留声机</span>
+          <span class="remote-skin-soon">敬请期待</span>
+        </button>
+      </div>
     </section>
   </div>
   <div id="comment-modal" class="modal-mask" hidden><section class="modal-card comment-card" role="dialog" aria-modal="true" aria-labelledby="comment-title"><div class="modal-head"><div><span class="eyebrow">SONG COMMENTS</span><h2 id="comment-title">评论</h2><p id="comment-sub"></p></div><button type="button" id="comment-close" class="modal-close" aria-label="关闭">×</button></div><div id="comment-list" class="comment-list"></div></section></div>

@@ -52,6 +52,16 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.now-meta .sub .sub-link {
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease);
+}
+.now-meta .sub .sub-link:hover,
+.now-meta .sub .sub-link:focus {
+  color: var(--accent-2);
+  outline: none;
+  text-decoration: underline;
+}
 .now-meta .badges {
   margin-top: 10px;
   display: flex;
@@ -221,7 +231,7 @@
 .stage {
   align-items:center;
   justify-content:center;
-  display:none!important;
+  display:grid!important;
   grid-template-columns:minmax(0,44fr) minmax(0,56fr);
   gap:clamp(24px,3vw,48px);
   padding:110px clamp(38px,7vw,138px) 132px;
@@ -249,7 +259,7 @@
   .stage .cover-stage { width:min(100%,calc(100vh - 300px),380px); height:auto; }
 }
 @media (max-width:650px) {
-  .stage.active { display:flex!important; flex-direction:column; overflow:auto; justify-content:flex-start; padding-top:104px; }
+  .stage,.stage.active { display:flex!important; flex-direction:column; overflow:auto; justify-content:flex-start; padding-top:104px; }
   .player-visual,.stage .lyrics-panel { width:min(100%,520px); }
   .stage .cover-stage { width:min(65vw,300px); height:min(65vw,300px); }
   .stage .lyrics-panel { min-height:300px; }
