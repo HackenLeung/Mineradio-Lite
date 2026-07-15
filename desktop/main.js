@@ -24,8 +24,20 @@ let desktopLyricsHotBounds = null;
 // Lite: 删除壁纸窗口/状态变量（wallpaperWindow / wallpaperState）。
 // 魔方遥控（酷狗魔方风格悬浮控制）
 let cubeRemoteWindow = null;
+const CUBE_REMOTE_SKINS = {
+  cube: { width: 136, height: 136 },
+  bar: { width: 320, height: 84 },
+  moon: { width: 248, height: 248 },
+};
+
+function clampCubeRemoteSkin(value) {
+  const skin = String(value || 'cube');
+  return CUBE_REMOTE_SKINS[skin] ? skin : 'cube';
+}
+
 let cubeRemoteState = {
   enabled: false,
+  skin: 'cube',
   title: '未播放',
   artist: '',
   cover: '',
@@ -297,6 +309,7 @@ function readDesktopBehaviorSettings() {
     openAtLogin: false,
     immersiveAutoFullscreen: false,
     cubeRemote: false,
+    cubeRemoteSkin: 'cube',
     cubeRemoteBounds: null,
   };
   try {
@@ -314,6 +327,7 @@ function readDesktopBehaviorSettings() {
       openAtLogin: raw.openAtLogin === true,
       immersiveAutoFullscreen: raw.immersiveAutoFullscreen === true,
       cubeRemote: raw.cubeRemote === true,
+      cubeRemoteSkin: clampCubeRemoteSkin(raw.cubeRemoteSkin || 'cube'),
       cubeRemoteBounds: bounds && [bounds.x, bounds.y, bounds.width, bounds.height].every(Number.isFinite)
         ? bounds
         : null,
@@ -324,6 +338,10 @@ function readDesktopBehaviorSettings() {
   if (desktopBehaviorSettings.cubeRemoteBounds) {
     cubeRemoteUserBounds = { ...desktopBehaviorSettings.cubeRemoteBounds };
   }
+  cubeRemoteState = {
+    ...cubeRemoteState,
+    skin: desktopBehaviorSettings.cubeRemoteSkin || 'cube',
+  };
   return desktopBehaviorSettings;
 }
 
@@ -1231,8 +1249,8 @@ function closeDesktopLyricsWindow() {
 // 见 docs/prohibited.md §3：壁纸模式需求明确不要，源码零功能残留。
 
 function cubeRemoteSize(state = {}) {
-  if (!state.expanded) return { width: 72, height: 72 };
-  return { width: state.volumeOpen ? 278 : 220, height: 154 };
+  const skin = clampCubeRemoteSkin(state.skin || cubeRemoteState.skin || 'cube');
+  return { ...(CUBE_REMOTE_SKINS[skin] || CUBE_REMOTE_SKINS.cube) };
 }
 
 function cubeRemoteDefaultBounds(state = {}) {
@@ -1251,11 +1269,11 @@ function cubeRemoteDefaultBounds(state = {}) {
   });
 }
 
-function resizeCubeRemoteBounds(bounds, state = {}) {
+function resizeCubeRemoteBounds(bounds, state = {}, keepLeft = false) {
   const size = cubeRemoteSize(state);
-  // 展开/收起保持中心点不变，鼠标移开收起时不会“跳到角落”
+  // 展开/收起保持中心点；音量弹层开关保持面板左边不动。
   return constrainCubeRemoteBounds({
-    x: Math.round(bounds.x + (bounds.width - size.width) / 2),
+    x: keepLeft ? bounds.x : Math.round(bounds.x + (bounds.width - size.width) / 2),
     y: Math.round(bounds.y + (bounds.height - size.height) / 2),
     width: size.width,
     height: size.height,
@@ -1267,8 +1285,8 @@ function constrainCubeRemoteBounds(bounds) {
   const area = display.workArea || display.bounds;
   const next = {
     ...bounds,
-    width: Math.round(Math.min(Math.max(72, bounds.width || 72), area.width)),
-    height: Math.round(Math.min(Math.max(72, bounds.height || 72), area.height)),
+    width: Math.round(Math.min(Math.max(60, bounds.width || 60), area.width)),
+    height: Math.round(Math.min(Math.max(60, bounds.height || 60), area.height)),
   };
   const maxX = area.x + Math.max(0, area.width - next.width);
   const maxY = area.y + Math.max(0, area.height - next.height);
@@ -1289,9 +1307,12 @@ function broadcastCubeRemoteEnabledState(enabled) {
 }
 
 function createCubeRemoteWindow(payload = {}) {
+  const behavior = readDesktopBehaviorSettings();
+  const nextSkin = clampCubeRemoteSkin(payload.skin || behavior.cubeRemoteSkin || cubeRemoteState.skin || 'cube');
   cubeRemoteState = {
     ...cubeRemoteState,
     ...(payload || {}),
+    skin: nextSkin,
     enabled: true,
   };
   if (cubeRemoteWindow && !cubeRemoteWindow.isDestroyed()) {
@@ -1373,7 +1394,8 @@ function closeCubeRemoteWindow({ fromSettings = false } = {}) {
 
 function setCubeRemoteEnabled(enabled, payload = {}) {
   const value = !!enabled;
-  saveDesktopBehaviorSettings({ cubeRemote: value });
+  const nextSkin = clampCubeRemoteSkin(payload.skin || readDesktopBehaviorSettings().cubeRemoteSkin || 'cube');
+  saveDesktopBehaviorSettings({ cubeRemote: value, cubeRemoteSkin: nextSkin });
   if (value) {
     createCubeRemoteWindow({
       ...trayPlaybackState,
@@ -1383,13 +1405,14 @@ function setCubeRemoteEnabled(enabled, payload = {}) {
       playing: !!trayPlaybackState.playing,
       mainVisible: mainWindowIsVisible(),
       ...payload,
+      skin: nextSkin,
       enabled: true,
     });
     broadcastCubeRemoteEnabledState(true);
   } else {
     closeCubeRemoteWindow({ fromSettings: true });
   }
-  return { ok: true, enabled: value };
+  return { ok: true, enabled: value, skin: nextSkin };
 }
 
 function closeOverlayWindows() {
@@ -1504,7 +1527,18 @@ ipcMain.handle('mineradio-desktop-behavior-set', (_event, payload = {}) => {
   if (Object.prototype.hasOwnProperty.call(payload, 'openAtLogin')) next.openAtLogin = payload.openAtLogin === true;
   if (Object.prototype.hasOwnProperty.call(payload, 'immersiveAutoFullscreen')) next.immersiveAutoFullscreen = payload.immersiveAutoFullscreen === true;
   if (Object.prototype.hasOwnProperty.call(payload, 'cubeRemote')) next.cubeRemote = payload.cubeRemote === true;
+  if (Object.prototype.hasOwnProperty.call(payload, 'cubeRemoteSkin')) next.cubeRemoteSkin = clampCubeRemoteSkin(payload.cubeRemoteSkin);
   const saved = saveDesktopBehaviorSettings(next);
+  if (Object.prototype.hasOwnProperty.call(next, 'cubeRemoteSkin')) {
+    cubeRemoteState = { ...cubeRemoteState, skin: next.cubeRemoteSkin };
+    if (cubeRemoteWindow && !cubeRemoteWindow.isDestroyed()) {
+      const bounds = cubeRemoteWindow.getBounds();
+      const sized = resizeCubeRemoteBounds(bounds, cubeRemoteState);
+      cubeRemoteWindow.setBounds(sized, false);
+      cubeRemoteUserBounds = cubeRemoteWindow.getBounds();
+      sendCubeRemoteState();
+    }
+  }
   if (Object.prototype.hasOwnProperty.call(next, 'cubeRemote')) {
     if (next.cubeRemote) {
       createCubeRemoteWindow({
@@ -1513,6 +1547,7 @@ ipcMain.handle('mineradio-desktop-behavior-set', (_event, payload = {}) => {
         cover: trayPlaybackState.cover || '',
         playing: !!trayPlaybackState.playing,
         volume: trayPlaybackState.volume,
+        skin: saved.cubeRemoteSkin || cubeRemoteState.skin || 'cube',
         enabled: true,
       });
       broadcastCubeRemoteEnabledState(true);
@@ -1560,12 +1595,26 @@ ipcMain.handle('mineradio-cube-remote-set-enabled', (_event, enabled, payload) =
 
 ipcMain.handle('mineradio-cube-remote-update', (_event, payload = {}) => {
   try {
-    cubeRemoteState = { ...cubeRemoteState, ...(payload || {}) };
+    const nextPayload = { ...(payload || {}) };
+    if (Object.prototype.hasOwnProperty.call(nextPayload, 'skin')) {
+      nextPayload.skin = clampCubeRemoteSkin(nextPayload.skin);
+      saveDesktopBehaviorSettings({ cubeRemoteSkin: nextPayload.skin });
+    }
+    const prevSkin = cubeRemoteState.skin;
+    cubeRemoteState = { ...cubeRemoteState, ...nextPayload };
     if (cubeRemoteState.enabled) {
       if (!cubeRemoteWindow || cubeRemoteWindow.isDestroyed()) createCubeRemoteWindow(cubeRemoteState);
-      else sendCubeRemoteState();
+      else {
+        if (prevSkin !== cubeRemoteState.skin) {
+          const bounds = cubeRemoteWindow.getBounds();
+          const sized = resizeCubeRemoteBounds(bounds, cubeRemoteState);
+          cubeRemoteWindow.setBounds(sized, false);
+          cubeRemoteUserBounds = cubeRemoteWindow.getBounds();
+        }
+        sendCubeRemoteState();
+      }
     }
-    return { ok: true };
+    return { ok: true, skin: cubeRemoteState.skin };
   } catch (e) {
     return { ok: false, error: e.message || 'CUBE_REMOTE_UPDATE_FAILED' };
   }
@@ -1612,17 +1661,26 @@ ipcMain.handle('mineradio-cube-remote-move-by', (_event, dx, dy) => {
 ipcMain.handle('mineradio-cube-remote-resize', (_event, payload = {}) => {
   try {
     if (!cubeRemoteWindow || cubeRemoteWindow.isDestroyed()) return { ok: false, error: 'NO_CUBE_WINDOW' };
-    const showMeta = payload.showMeta === true;
-    const expanded = payload.expanded === true || showMeta;
-    const volumeOpen = payload.volumeOpen === true && expanded;
-    cubeRemoteState = { ...cubeRemoteState, showMeta, expanded, volumeOpen };
+    if (payload && payload.skin) {
+      cubeRemoteState = { ...cubeRemoteState, skin: clampCubeRemoteSkin(payload.skin) };
+      saveDesktopBehaviorSettings({ cubeRemoteSkin: cubeRemoteState.skin });
+    }
+    const width = Math.round(Number(payload.width) || 0);
+    const height = Math.round(Number(payload.height) || 0);
+    const size = (width > 40 && height > 40)
+      ? { width, height }
+      : cubeRemoteSize(cubeRemoteState);
     const bounds = cubeRemoteWindow.getBounds();
-    const next = resizeCubeRemoteBounds(bounds, cubeRemoteState);
+    const next = constrainCubeRemoteBounds({
+      x: Math.round(bounds.x + (bounds.width - size.width) / 2),
+      y: Math.round(bounds.y + (bounds.height - size.height) / 2),
+      width: size.width,
+      height: size.height,
+    });
     cubeRemoteWindow.setBounds(next, false);
-    // 展开/收起不覆盖用户锚点坐标，只更新内存尺寸；真正拖动时再持久化
     cubeRemoteUserBounds = cubeRemoteWindow.getBounds();
     sendCubeRemoteState();
-    return { ok: true, showMeta, expanded, volumeOpen };
+    return { ok: true, skin: cubeRemoteState.skin, ...size };
   } catch (e) {
     return { ok: false, error: e.message || 'CUBE_RESIZE_FAILED' };
   }
