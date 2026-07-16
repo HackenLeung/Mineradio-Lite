@@ -16,6 +16,7 @@ import { mountSettings } from './ui/settings.js';
 import { mountSongActions } from './ui/song-actions.js';
 import { mountDesktopLyricsController } from './ui/desktop-lyrics-controller.js';
 import { mountCubeRemoteController } from './ui/cube-remote-controller.js';
+import { mountLocalMatch } from './ui/local-match.js';
 
 function boot() {
   player.init();
@@ -31,6 +32,7 @@ function boot() {
   mountDesktopLyricsController();
   mountCubeRemoteController();
   mountSongActions();
+  mountLocalMatch();
 
   fetchAppVersion()
     .then((v) => {

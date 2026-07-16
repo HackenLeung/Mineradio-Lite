@@ -8,6 +8,7 @@ import { desktop } from './desktop.js';
 import { bus } from './bus.js';
 import { store } from './store.js';
 import { toast } from '../ui/toast.js';
+import { applyCachedMetadataToLocalSong } from './local-online-match.js';
 
 const FOLDERS_KEY = 'mineradio-lite-local-library-folders-v1';
 
@@ -52,7 +53,7 @@ function songFromScanFile(file, folderPath) {
   const base = String(file.name || '本地音乐').replace(/\.[^.]+$/, '');
   const localPath = file.filePath || file.fullPath || '';
   const localKey = [localPath || file.url || file.name, file.size || 0, file.lastModified || 0].join(':');
-  return {
+  const song = {
     id: localKey,
     type: 'local',
     source: 'local',
@@ -72,6 +73,8 @@ function songFromScanFile(file, folderPath) {
     localLyricText: file.sidecarLyricText || '',
     duration: 0,
   };
+  // 套用此前在线匹配缓存（封面/歌手/专辑）；sidecar 封面优先不覆盖
+  return applyCachedMetadataToLocalSong(song);
 }
 
 function rebuildSongs() {
@@ -294,8 +297,29 @@ export const localLibrary = {
   setSearch,
   removeFolder,
   ensureFreshUrl,
+  /** 在线匹配成功后写回库内歌曲，并刷新首页/侧栏封面。 */
+  applyOnlineMetadata(localKey, metadata) {
+    if (!localKey || !metadata) return false;
+    let touched = false;
+    state.folders.forEach((folder) => {
+      (folder.songs || []).forEach((song) => {
+        if (!song || song.localKey !== localKey) return;
+        song.onlineMetadata = metadata;
+        if (metadata.artist) song.artist = metadata.artist;
+        if (metadata.album) song.album = metadata.album;
+        if (!song.localSidecarCover && metadata.cover) song.cover = metadata.cover;
+        touched = true;
+      });
+    });
+    if (!touched) return false;
+    rebuildSongs();
+    rebindQueue();
+    bus.emit('local-library-changed', snapshot());
+    return true;
+  },
   folderCover(folder) {
     const songs = folder && Array.isArray(folder.songs) ? folder.songs : [];
+    // 优先第一首有封面的；没有则扫全部（扫描顺序即文件夹内排序）
     for (const song of songs) {
       if (song && song.cover) return song.cover;
     }

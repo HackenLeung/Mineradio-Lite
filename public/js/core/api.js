@@ -157,6 +157,23 @@ export async function searchKugou(keywords, limit = 20) {
   return getJson(`/api/kugou/search?${q}`);
 }
 
+/** 网易云听歌上报（登录后）。time 单位：秒。 */
+export async function scrobbleNeteaseListen({ id, sourceid, time }) {
+  return postJson('/api/listen/scrobble', {
+    id: String(id || ''),
+    sourceid: String(sourceid || id || '0'),
+    time: Math.max(1, Math.round(Number(time) || 1)),
+  });
+}
+
+/** 酷狗听歌上报（登录后）。mxid 为 mixSongId。 */
+export async function uploadKugouListen({ mxid, ot }) {
+  return postJson('/api/kugou/listen/upload', {
+    mxid: String(mxid || ''),
+    ot: Math.floor(Number(ot) || Date.now() / 1000),
+  });
+}
+
 /**
  * 播放地址：
  * - playable:false 或无 url → 不可播
@@ -220,8 +237,29 @@ export async function fetchSongUrl(song, quality = 'hires') {
 export async function fetchLyric(song) {
   if (!song) return { lyric: '', tlyric: '', yrc: '' };
   if ((song.provider || song.source || song.type) === 'local') {
+    // 1) 同目录 .lrc / .txt sidecar
     const localLyric = String(song.localLyricText || '').trim();
     if (localLyric) return { lyric: localLyric, tlyric: '', yrc: '', provider: 'local' };
+    // 2) 在线匹配到的元数据：走网易云/酷狗歌词接口（对齐原版 applyLocalOnlineMetadata → fetchLyric）
+    const meta = song.onlineMetadata;
+    if (meta && (meta.id || meta.hash)) {
+      if ((meta.provider || meta.source) === 'kugou') {
+        const hash = meta.hash || meta.id;
+        const q = new URLSearchParams({ hash: String(hash || '') });
+        if (meta.duration) q.set('duration', String(meta.duration));
+        const data = await getJson(`/api/kugou/lyric?${q}`);
+        return { lyric: (data && data.lyric) || '', tlyric: '', yrc: '', provider: 'kugou' };
+      }
+      if (meta.id) {
+        const data = await getJson(`/api/lyric?id=${encodeURIComponent(meta.id)}`);
+        return {
+          lyric: (data && data.lyric) || '',
+          tlyric: (data && data.tlyric) || '',
+          yrc: (data && data.yrc) || '',
+          provider: 'netease',
+        };
+      }
+    }
     return { lyric: '', tlyric: '', yrc: '', provider: 'local' };
   }
   if ((song.provider || song.source) === 'kugou') {

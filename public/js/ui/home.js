@@ -202,6 +202,19 @@ function renderHistory() {
   });
 }
 
+function firstLocalCover(snap) {
+  if (!snap) return '';
+  // 首页大卡/文件夹：优先文件夹第一首有封面的歌，再退到全库第一首有封面的
+  for (const folder of snap.folders || []) {
+    const cover = localLibrary.folderCover(folder);
+    if (cover) return cover;
+  }
+  for (const song of snap.songs || []) {
+    if (song && song.cover) return song.cover;
+  }
+  return '';
+}
+
 function renderLocalHome() {
   const snap = localLibrary.snapshot();
   const title = document.getElementById('home-local-title');
@@ -213,12 +226,13 @@ function renderLocalHome() {
       ? `${snap.total} 首 · ${snap.folders.length} 个文件夹`
       : (snap.loading ? '扫描中…' : '导入文件夹');
   }
-  setFeatureCover('home-local-cover', localLibrary.folderCover(snap.folders[0]) || snap.songs[0]?.cover || '');
+  setFeatureCover('home-local-cover', firstLocalCover(snap));
   clear(host);
   show('home-local-section', snap.folders.length > 0);
   snap.folders.slice(0, 6).forEach((folder) => {
+    const cover = localLibrary.folderCover(folder) || firstLocalCover(snap);
     host?.appendChild(mediaCard(
-      { name: folder.name, cover: localLibrary.folderCover(folder) },
+      { name: folder.name, cover },
       `${(folder.songs || []).length} 首本地`,
       () => {
         if (!folder.songs?.length) return;

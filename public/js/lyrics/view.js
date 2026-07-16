@@ -318,6 +318,12 @@ export function mountLyricsView(root) {
   else window.addEventListener('resize', recalibrateAfterResize);
 
   bus.on('song-change', loadForSong);
+  // 本地曲在线匹配完成后会更新 onlineMetadata，再拉一次歌词
+  bus.on('local-metadata', ({ song }) => {
+    const now = store.get().now;
+    if (!song || !now || !song.localKey || song.localKey !== now.localKey) return;
+    loadForSong(now);
+  });
   let lastPlayerTheme = store.get().playerTheme || 'default';
   bus.on('store', (state) => {
     const theme = state.playerTheme || 'default';

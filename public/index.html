@@ -262,6 +262,31 @@
   </div>
   <div id="comment-modal" class="modal-mask" hidden><section class="modal-card comment-card" role="dialog" aria-modal="true" aria-labelledby="comment-title"><div class="modal-head"><div><span class="eyebrow">SONG COMMENTS</span><h2 id="comment-title">评论</h2><p id="comment-sub"></p></div><button type="button" id="comment-close" class="modal-close" aria-label="关闭">×</button></div><div id="comment-list" class="comment-list"></div></section></div>
   <div id="collect-modal" class="modal-mask" hidden><section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="collect-title"><div class="modal-head"><div><span class="eyebrow">ADD TO PLAYLIST</span><h2 id="collect-title">收藏到歌单</h2></div><button type="button" id="collect-close" class="modal-close" aria-label="关闭">×</button></div><p id="collect-status" class="modal-status">正在读取歌单…</p><div id="collect-list" class="collect-list"></div></section></div>
+  <div id="local-match-modal" class="modal-mask" hidden>
+    <section class="modal-card local-match-card" role="dialog" aria-modal="true" aria-labelledby="local-match-heading">
+      <div class="modal-head">
+        <div>
+          <span class="eyebrow">LOCAL MATCH</span>
+          <h2 id="local-match-heading">匹配在线歌曲</h2>
+        </div>
+        <button type="button" id="local-match-close" class="modal-close" aria-label="关闭">×</button>
+      </div>
+      <div class="local-match-track">
+        <div id="local-match-song-title" class="local-match-track-title">当前本地歌曲</div>
+        <div id="local-match-song-sub" class="local-match-track-sub">选择正确在线曲目后，用于封面、歌词、评论和听歌上报</div>
+      </div>
+      <div class="provider-switch local-match-providers">
+        <button type="button" id="local-match-provider-netease" data-local-match-provider="netease">网易云</button>
+        <button type="button" id="local-match-provider-kugou" data-local-match-provider="kugou">酷狗</button>
+      </div>
+      <div class="local-match-search-row">
+        <input id="local-match-query" class="field" type="search" spellcheck="false" placeholder="歌名 / 歌手，可手动改" />
+        <button type="button" id="local-match-search" class="chip active">搜索</button>
+      </div>
+      <p id="local-match-status" class="modal-status">输入关键词后搜索</p>
+      <div id="local-match-results" class="local-match-results"></div>
+    </section>
+  </div>
   <div id="home-editor-modal" class="modal-mask" hidden><section class="modal-card home-editor-card" role="dialog" aria-modal="true" aria-labelledby="home-editor-title"><div class="modal-head"><div><span class="eyebrow">CUSTOM HOME</span><h2 id="home-editor-title">编辑首页内容</h2></div><button type="button" id="home-editor-close" class="modal-close" aria-label="关闭">×</button></div><div class="home-editor-preview"><div id="home-editor-preview-media" class="home-editor-preview-media"></div><div class="home-editor-preview-copy"><strong id="home-editor-preview-text"></strong><small id="home-editor-preview-source"></small></div></div><div class="home-editor-grid"><div><label class="home-editor-field"><span>首页文案</span><textarea id="home-editor-text" maxlength="180"></textarea></label><label class="home-editor-field"><span>署名（可留空）</span><input id="home-editor-source" type="text" maxlength="40"></label><label class="setting-switch home-editor-weather"><span>显示天气</span><input id="home-editor-show-weather" type="checkbox"></label></div><div class="home-editor-image-controls"><div class="home-editor-image-actions"><button type="button" id="home-editor-pick-image">选择图片</button><button type="button" id="home-editor-clear-image">清除图片</button></div><label>左右<input id="home-editor-position-x" type="range" min="0" max="100" step="1"><output id="home-editor-position-x-value"></output></label><label>上下<input id="home-editor-position-y" type="range" min="0" max="100" step="1"><output id="home-editor-position-y-value"></output></label><label>缩放<input id="home-editor-zoom" type="range" min="100" max="180" step="1"><output id="home-editor-zoom-value"></output></label></div></div><p id="home-editor-status" class="modal-status"></p><div class="modal-actions"><button type="button" id="home-editor-cancel" class="chip">取消</button><button type="button" id="home-editor-save" class="chip active">保存</button></div></section></div>
   <input id="home-image-input" type="file" accept="image/*" hidden />
   <div id="toast-host" class="toast-host"></div>

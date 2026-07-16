@@ -1,7 +1,7 @@
 {
   "name": "mineradio-lite",
   "productName": "Mineradio Lite",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Windows 沉浸式音乐播放器（Lite）：多平台搜索、本地音乐库、纯 DOM 歌词舞台，优先降低运行时占用。",
   "author": "Mineradio Lite",
   "license": "MIT",

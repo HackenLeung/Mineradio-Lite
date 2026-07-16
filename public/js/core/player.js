@@ -10,6 +10,7 @@ import { store } from './store.js';
 import { fetchSongUrl, audioProxyUrl, coverUrl } from './api.js';
 import { desktop } from './desktop.js';
 import { toast } from '../ui/toast.js';
+import { listenReport } from './listen-report.js';
 
 const CROSSFADE_PRELOAD_SEC = 14;
 const CROSSFADE_START_SEC = 5.5;
@@ -363,10 +364,17 @@ function onPrimaryTimeUpdate() {
   if (seeking || !audio) return;
   store.patch({ currentTime: audio.currentTime || 0, duration: audio.duration || 0 });
   if (store.get().smartTransition !== false) maybeStartSmartCrossfade();
+  try { listenReport.onTimeUpdate(audio); } catch (_e) {}
 }
 function onPrimaryMeta() {
   if (!audio) return;
-  store.patch({ duration: audio.duration || 0 });
+  const duration = audio.duration || 0;
+  store.patch({ duration });
+  // 写入当前本地曲 duration，提升后续在线匹配准确度
+  const now = store.get().now;
+  if (now && (now.provider || now.source || now.type) === 'local' && duration > 0) {
+    now.duration = duration;
+  }
 }
 function onPrimaryPlay() {
   store.patch({ playing: true });
@@ -379,6 +387,7 @@ function onPrimaryPause() {
   bus.emit('playing-change', false);
 }
 function onPrimaryEnded() {
+  try { listenReport.onEnded(); } catch (_e) {}
   // 智能过渡：若 next 已 ready/mixing，交给 crossfade；否则常规 next
   if (store.get().smartTransition !== false && smart) {
     if (smart.status === 'mixing' || smart.status === 'handoff') return;
@@ -520,6 +529,22 @@ async function loadAndPlay(song, { manual = false } = {}) {
   });
   bus.emit('song-change', playSong);
 
+  // 本地曲：对齐原版，播放时后台匹配在线封面/歌手/歌词元数据（不阻塞开播）
+  if ((playSong.provider || playSong.source || playSong.type) === 'local') {
+    const playToken = token;
+    import('./local-online-match.js')
+      .then(({ resolveLocalOnlineMetadata }) => resolveLocalOnlineMetadata(
+        playSong,
+        () => playToken === loadToken,
+      ))
+      .then((metadata) => {
+        if (!metadata || playToken !== loadToken) return;
+        // 匹配成功后刷新封面；歌词视图监听 local-metadata / song-change 再拉一次
+        bus.emit('cover-change', store.get().now && store.get().now.cover || metadata.cover || '');
+      })
+      .catch((e) => console.warn('[LocalOnlineMatch]', e));
+  }
+
   const a = ensureAudio();
   const wantSmart = store.get().smartTransition !== false;
   // 仅当「正在播放旧曲」时做短过渡 + 底部芯片（对齐原版 showSmartTransition 条件）
@@ -594,6 +619,7 @@ export const player = {
     ensureAudio();
     applyVolume();
     applyPlaybackRate();
+    try { listenReport.init(); } catch (_e) {}
     bus.on('play-request', (song) => {
       loadAndPlay(song, { manual: true });
     });

@@ -85,8 +85,10 @@
   font-size: 17px;
   font-weight: 600;
   line-height: 1.45;
-  white-space: normal;
-  overflow-wrap: anywhere;
+  /* 整句优先一行；容器不够时再换行，且尽量按词边界断，避免「什么」被拆开 */
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: keep-all;
 }
 .lyric-row.active .lyric-main {
   font-size: 20px;
@@ -98,8 +100,9 @@
 .lyric-main.is-words .lyric-fill {
   display: block;
   width: 100%;
-  white-space: normal;
-  overflow-wrap: anywhere;
+  white-space: inherit;
+  overflow-wrap: inherit;
+  word-break: inherit;
 }
 .lyric-main.is-words .lyric-base { color: #d9e0e1; }
 .lyric-main.is-words .lyric-fill {
@@ -179,7 +182,8 @@
 
 /* —— 大封面歌词主题：前景超大暖金歌词 —— */
 body[data-player-theme="immersive"] .lyrics-panel {
-  width: min(920px, 92vw);
+  /* 加宽，减少沉浸大字号下整句被挤换行 */
+  width: min(1100px, 96vw);
   max-height: none;
 }
 
@@ -201,6 +205,9 @@ body[data-player-theme="immersive"] .lyric-main {
   line-height: 1.45;
   color: rgba(240, 244, 246, 0.86);
   text-shadow: 0 1px 10px rgba(0, 0, 0, 0.45);
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: keep-all;
 }
 
 body[data-player-theme="immersive"] .lyric-row.active {
@@ -211,16 +218,30 @@ body[data-player-theme="immersive"] .lyric-row.active {
 }
 
 body[data-player-theme="immersive"] .lyric-row.active .lyric-main {
-  font-size: clamp(36px, 5.4vw, 64px);
+  /* 略收字号，优先保证整句同一行显示完整 */
+  font-size: clamp(28px, 4.2vw, 52px);
   font-weight: 800;
   letter-spacing: 0.02em;
   line-height: 1.22;
   color: #f3dfb0;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: keep-all;
   text-shadow:
     0 0 2px rgba(0, 0, 0, 0.85),
     0 2px 12px rgba(0, 0, 0, 0.72),
     0 0 28px rgba(244, 210, 138, 0.42),
     0 0 56px rgba(244, 210, 138, 0.22);
+}
+
+/* 超长句才允许换行，且按词/语义边界断，不在汉字中间硬拆 */
+@media (max-width: 1100px) {
+  body[data-player-theme="immersive"] .lyric-row.active .lyric-main {
+    white-space: normal;
+    overflow-wrap: break-word;
+    word-break: keep-all;
+    line-break: strict;
+  }
 }
 
 body[data-player-theme="immersive"] .lyric-main.is-words .lyric-base {
