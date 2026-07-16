@@ -69,6 +69,7 @@ const MIN_WINDOWED_HEIGHT = 540;
 const APP_NAME = 'Mineradio Lite';
 const APP_USER_MODEL_ID = 'com.mineradio.lite';
 const APP_USER_DATA_DIR = 'Mineradio Lite';
+const INSTALL_USER_DATA_DIR = 'user-data';
 const APP_ICON_ICO = path.join(__dirname, '..', 'build', 'icon.ico');
 const DESKTOP_BEHAVIOR_FILE = 'desktop-behavior.json';
 const DOWNLOAD_SETTINGS_FILE = 'download-settings.json';
@@ -98,14 +99,55 @@ const LOCAL_LIBRARY_MIME = {
 // 避免强制唤醒独立显卡、抬高运行时占用（见 docs/prohibited.md §5）。
 // autoplay-policy 与 GPU 无关：托盘/全局热键/自动切歌是非页面点击触发的播放，
 // 若被浏览器 autoplay 策略拦截会失效，故按功能审查单独保留（见 docs/implementation-plan.md 阶段 0 任务 4）。
+// CalculateNativeWinOcclusion 不是 GPU 强制项：Windows 上该特性会在窗口被判定
+// 「不可见/被遮挡」时停掉合成，打包后首次冷启动（GPUCache 尚未就绪）容易把首帧
+// 卡在 backgroundColor 黑屏，直到进程重启才恢复。
+const FIRST_PAINT_OK_MARKER = '.first-paint-ok';
+const BOOT_LOG_FILE = 'main-boot.log';
 const CHROMIUM_APP_SWITCHES = [
   ['autoplay-policy', 'no-user-gesture-required'],
+  ['disable-features', 'CalculateNativeWinOcclusion'],
 ];
 for (const [name, value] of CHROMIUM_APP_SWITCHES) {
   if (value == null) app.commandLine.appendSwitch(name);
   else app.commandLine.appendSwitch(name, value);
 }
+
+function resolvePackagedUserDataDir() {
+  if (process.env.MINERADIO_LITE_USER_DATA) {
+    return path.resolve(process.env.MINERADIO_LITE_USER_DATA);
+  }
+  if (app.isPackaged) {
+    return path.join(path.dirname(process.execPath), INSTALL_USER_DATA_DIR);
+  }
+  return path.join(process.env.APPDATA || '', APP_USER_DATA_DIR);
+}
+
+// 打包后首次冷启动：关闭 GPU 合成，强制软件光栅。
+// 这不是「强制高性能独显」，而是避开 GPUCache 未就绪时整窗只剩 backgroundColor 的问题。
+// 成功写出 .first-paint-ok 后，后续启动恢复默认 GPU 路径。
+let coldGpuBypassActive = false;
+try {
+  const coldMarker = path.join(resolvePackagedUserDataDir(), FIRST_PAINT_OK_MARKER);
+  if (!fs.existsSync(coldMarker)) {
+    coldGpuBypassActive = true;
+    app.commandLine.appendSwitch('disable-gpu-compositing');
+    app.commandLine.appendSwitch('disable-gpu');
+  }
+} catch (_e) {}
+
 const gotSingleInstanceLock = app.requestSingleInstanceLock();
+const launchedFromInstaller = process.argv.includes('--mineradio-installer-launch');
+
+function bootLog(message, extra) {
+  const line = `[${new Date().toISOString()}] ${message}${extra ? ` ${typeof extra === 'string' ? extra : JSON.stringify(extra)}` : ''}`;
+  try { console.log(line); } catch (_e) {}
+  try {
+    const target = path.join(app.getPath('userData'), BOOT_LOG_FILE);
+    fs.mkdirSync(path.dirname(target), { recursive: true });
+    fs.appendFileSync(target, `${line}\n`, 'utf8');
+  } catch (_e) {}
+}
 
 const NETEASE_LOGIN_COOKIE_PRIORITY = [
   'MUSIC_U',
@@ -160,6 +202,70 @@ function waitForServer(server) {
     server.once('listening', resolve);
     server.once('error', reject);
   });
+}
+
+/** Node 侧真正 HTTP 探活：server.listening 为 true 时，Chromium 首连仍可能 ERR_FAILED。 */
+function waitForHttpReady(port, options = {}) {
+  const timeoutMs = Number(options.timeoutMs) > 0 ? Number(options.timeoutMs) : 15000;
+  const intervalMs = Number(options.intervalMs) > 0 ? Number(options.intervalMs) : 120;
+  const started = Date.now();
+
+  return new Promise((resolve, reject) => {
+    const attempt = () => {
+      const req = http.get({
+        host: '127.0.0.1',
+        port,
+        path: '/',
+        timeout: 800,
+      }, (res) => {
+        res.resume();
+        if (res.statusCode && res.statusCode >= 200 && res.statusCode < 500) {
+          resolve({ ok: true, statusCode: res.statusCode, elapsedMs: Date.now() - started });
+          return;
+        }
+        retry(new Error(`HTTP_${res.statusCode || 0}`));
+      });
+      req.on('timeout', () => {
+        req.destroy();
+        retry(new Error('HTTP_TIMEOUT'));
+      });
+      req.on('error', (err) => retry(err));
+    };
+
+    const retry = (err) => {
+      if (Date.now() - started >= timeoutMs) {
+        reject(err || new Error('HTTP_READY_TIMEOUT'));
+        return;
+      }
+      setTimeout(attempt, intervalMs);
+    };
+
+    attempt();
+  });
+}
+
+async function loadMainWindowUrl(win, url, options = {}) {
+  const attempts = Number(options.attempts) > 0 ? Number(options.attempts) : 5;
+  const delayMs = Number(options.delayMs) > 0 ? Number(options.delayMs) : 250;
+  let lastError = null;
+
+  for (let i = 1; i <= attempts; i += 1) {
+    if (!win || win.isDestroyed()) throw new Error('WINDOW_DESTROYED');
+    try {
+      bootLog('loadMainWindowUrl:attempt', { i, attempts, url });
+      await win.loadURL(url);
+      bootLog('loadMainWindowUrl:ok', { i, url });
+      return { ok: true, attempt: i };
+    } catch (err) {
+      lastError = err;
+      const message = err && err.message ? err.message : String(err);
+      bootLog('loadMainWindowUrl:fail', { i, attempts, message });
+      if (i >= attempts) break;
+      await new Promise((resolve) => setTimeout(resolve, delayMs * i));
+    }
+  }
+
+  throw lastError || new Error('LOAD_URL_FAILED');
 }
 
 function sendWindowState(win) {
@@ -394,8 +500,10 @@ function ensureMineradioTray() {
   if (mineradioTray || !fs.existsSync(APP_ICON_ICO)) return mineradioTray;
   mineradioTray = new Tray(APP_ICON_ICO);
   mineradioTray.setToolTip(APP_NAME);
-  mineradioTray.on('click', focusMainWindow);
-  mineradioTray.on('double-click', focusMainWindow);
+  // 托盘点击显式走 fromTray：做轻量 repaint，并在需要时抢前台。
+  const openFromTray = () => focusMainWindow({ fromTray: true, forceForeground: true });
+  mineradioTray.on('click', openFromTray);
+  mineradioTray.on('double-click', openFromTray);
   updateMineradioTray();
   return mineradioTray;
 }
@@ -427,7 +535,7 @@ function updateMineradioTray() {
       ],
     },
     { type: 'separator' },
-    { label: `打开 ${APP_NAME}`, click: focusMainWindow },
+    { label: `打开 ${APP_NAME}`, click: () => focusMainWindow({ fromTray: true, forceForeground: true }) },
     {
       label: `退出 ${APP_NAME}`,
       click: () => {
@@ -543,11 +651,71 @@ async function scanLocalMusicFolder(folderPath) {
   return { ok: true, folderPath: root, files, truncated: visited > 60000 };
 }
 
-function focusMainWindow() {
+function firstPaintOkPath() {
+  return path.join(app.getPath('userData'), FIRST_PAINT_OK_MARKER);
+}
+
+function hasCompletedFirstPaint() {
+  try {
+    return fs.existsSync(firstPaintOkPath());
+  } catch (_e) {
+    return false;
+  }
+}
+
+function markFirstPaintOk() {
+  try {
+    fs.writeFileSync(firstPaintOkPath(), `${new Date().toISOString()}\n`, 'utf8');
+  } catch (e) {
+    console.warn('Write first-paint marker failed:', e.message);
+  }
+}
+
+function forceMainWindowRepaint() {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  try {
+    const bounds = mainWindow.getBounds();
+    // 1px 尺寸抖动能踢醒卡在首帧的 DWM/Chromium 合成器，比 reload 更轻。
+    mainWindow.setBounds({ ...bounds, width: bounds.width + 1 }, false);
+    mainWindow.setBounds(bounds, false);
+  } catch (_e) {}
+  try { mainWindow.webContents.invalidate(); } catch (_e) {}
+}
+
+/**
+ * 托盘点开时：只做轻量重绘，不再无条件 reload。
+ * 无脑 reload 会让用户感觉“又重新进了一次”，很不美观。
+ */
+function reviveMainWindowContent() {
+  if (!mainWindow || mainWindow.isDestroyed()) return;
+  forceMainWindowRepaint();
+}
+
+function focusMainWindow(options = {}) {
   if (!mainWindow || mainWindow.isDestroyed()) return false;
+  // forceForeground 仅在安装器拉起等“没有用户手势”的路径使用，避免日常 focus 反复置顶。
+  const forceForeground = options.forceForeground === true;
+  const fromTray = options.fromTray === true;
   if (mainWindow.isMinimized()) mainWindow.restore();
   if (!mainWindow.isVisible()) mainWindow.show();
+  // 安装器收尾时 Windows 前台锁会挡住 SetForegroundWindow；
+  // 短暂置顶 + moveTop 是把已创建窗口拉回前台的稳妥做法。
+  if (forceForeground) {
+    try { app.focus({ steal: true }); } catch (_e) {}
+    try { mainWindow.setAlwaysOnTop(true); } catch (_e) {}
+    try { mainWindow.moveTop(); } catch (_e) {}
+  }
+  if (fromTray) reviveMainWindowContent();
+  else forceMainWindowRepaint();
   mainWindow.focus();
+  if (forceForeground) {
+    setTimeout(() => {
+      if (!mainWindow || mainWindow.isDestroyed()) return;
+      try { mainWindow.setAlwaysOnTop(false); } catch (_e) {}
+      try { mainWindow.moveTop(); } catch (_e) {}
+      try { mainWindow.focus(); } catch (_e) {}
+    }, 400);
+  }
   sendWindowState(mainWindow);
   syncCubeMainVisibility();
   return true;
@@ -1969,9 +2137,15 @@ async function createWindow() {
   htmlFullscreenActive = false;
   windowFullscreenActive = false;
   saveDesktopBehaviorSettings(readDesktopBehaviorSettings());
-  ensureMineradioTray();
+  bootLog('createWindow:start', {
+    packaged: !!app.isPackaged,
+    coldGpuBypassActive,
+    coldFirstPaint: !hasCompletedFirstPaint(),
+    argv: process.argv.slice(1),
+  });
   const port = await findOpenPort(3000);
   mainServerPort = port;
+  bootLog('createWindow:port', { port });
 
   process.env.HOST = '127.0.0.1';
   process.env.PORT = String(port);
@@ -1981,16 +2155,26 @@ async function createWindow() {
   process.env.MINERADIO_DOWNLOAD_DIR = readSavedDownloadDir() || defaultDownloadDir();
   localServer = require(path.join(__dirname, '..', 'server.js'));
   await waitForServer(localServer);
+  bootLog('createWindow:server-listening');
+  try {
+    const ready = await waitForHttpReady(port, { timeoutMs: 20000, intervalMs: 100 });
+    bootLog('createWindow:http-ready', ready);
+  } catch (e) {
+    bootLog('createWindow:http-ready-failed', e && e.message ? e.message : String(e));
+  }
 
   const initialBounds = getWindowedBounds();
+  const coldFirstPaint = !hasCompletedFirstPaint();
 
   mainWindow = new BrowserWindow({
     ...initialBounds,
     minWidth: 960,
     minHeight: 540,
-    show: false,
+    // 必须立刻占任务栏：若等 ready-to-show，首次冷启动常整段不触发，用户只看到托盘。
+    show: true,
     frame: false,
     fullscreen: false,
+    skipTaskbar: false,
     // Lite: transparent 由 true 改为 false（见 docs/prohibited.md §5）。透明主窗口带来
     // 额外合成开销；阶段 0 占位页与后续玻璃拟态外壳不依赖系统桌面透出，默认用不透明窗口。
     // 若阶段 1 圆角/毛玻璃外壳确需窗口级透明，须另附合成成本对比数据后再单独开启。
@@ -2005,9 +2189,66 @@ async function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: false,
-      backgroundThrottling: true,
+      // 首次冷启动关闭 backgroundThrottling，避免合成器被停掉后只剩 backgroundColor 黑屏。
+      backgroundThrottling: !coldFirstPaint,
     },
   });
+  bootLog('createWindow:browser-created', {
+    bounds: mainWindow.getBounds(),
+    visible: mainWindow.isVisible(),
+    coldFirstPaint,
+  });
+
+  // 托盘晚于主窗创建：避免「只有托盘、任务栏没有按钮」的空窗期。
+  ensureMineradioTray();
+
+  let pageReady = false;
+  let absoluteShowTimer = null;
+
+  const promoteMainWindow = (reason = 'ready') => {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    if (!mainWindow.isVisible()) mainWindow.show();
+    forceMainWindowRepaint();
+    focusMainWindow({
+      forceForeground: launchedFromInstaller || reason === 'timeout' || coldFirstPaint,
+    });
+    sendWindowState(mainWindow);
+    bootLog('promoteMainWindow', {
+      reason,
+      visible: mainWindow.isVisible(),
+      url: (() => { try { return mainWindow.webContents.getURL(); } catch (_e) { return ''; } })(),
+    });
+  };
+
+  const finishInitialPresent = (reason = 'ready') => {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    promoteMainWindow(reason);
+
+    // 主窗完成首次加载后再恢复魔方，保证 IPC 广播与页面加载都可用。
+    if (readDesktopBehaviorSettings().cubeRemote) {
+      createCubeRemoteWindow({ enabled: true });
+      broadcastCubeRemoteEnabledState(true);
+    }
+
+    // 页面已成功 load 就写标记；不要再 reload/loadURL，否则会出现“进了又重新进一次”。
+    // 冷启动黑屏主要靠 disable-gpu 首启路径 + 轻量 repaint 解决。
+    if (pageReady) {
+      markFirstPaintOk();
+      bootLog('first-paint:marked', { reason, coldFirstPaint });
+    }
+
+    if (launchedFromInstaller) {
+      setTimeout(() => promoteMainWindow('installer-retry'), 500);
+      setTimeout(() => promoteMainWindow('installer-retry'), 1500);
+    }
+  };
+
+  // 不依赖任何 load 事件：创建后 1.2s 仍未 pageReady 也强制再 show/focus，保证任务栏有入口。
+  absoluteShowTimer = setTimeout(() => {
+    absoluteShowTimer = null;
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    promoteMainWindow(pageReady ? 'ready-timeout' : 'timeout');
+  }, 1200);
 
   // Lite 安全加固（见 docs/prohibited.md §6）：外链仅允许 http/https，且一律转系统浏览器 + deny，
   // 不在应用内新开窗口。
@@ -2032,8 +2273,49 @@ async function createWindow() {
     }
   });
 
-  mainWindow.webContents.once('did-finish-load', () => {
+  mainWindow.webContents.on('did-start-loading', () => {
+    bootLog('webContents:did-start-loading');
+  });
+
+  mainWindow.webContents.on('dom-ready', () => {
+    bootLog('webContents:dom-ready');
+    // 极轻兜底：只保证背景不是透明/未定义，不盖全屏 splash，避免“闪一下又重进”。
+    mainWindow.webContents.executeJavaScript(`
+      (() => {
+        try {
+          document.documentElement.style.background = '#0e1014';
+          if (document.body) document.body.style.background = '#0e1014';
+        } catch (_e) {}
+      })();
+    `, true).catch((e) => bootLog('dom-ready:inject-failed', e && e.message ? e.message : String(e)));
+  });
+
+  mainWindow.webContents.on('did-finish-load', () => {
+    pageReady = true;
+    if (absoluteShowTimer) {
+      clearTimeout(absoluteShowTimer);
+      absoluteShowTimer = null;
+    }
+    bootLog('webContents:did-finish-load', {
+      url: (() => { try { return mainWindow.webContents.getURL(); } catch (_e) { return ''; } })(),
+    });
     sendWindowState(mainWindow);
+    finishInitialPresent('did-finish-load');
+  });
+
+  mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription, validatedURL, isMainFrame) => {
+    if (!isMainFrame) return;
+    bootLog('webContents:did-fail-load', { errorCode, errorDescription, validatedURL });
+    console.error('Main window failed to load:', errorCode, errorDescription, validatedURL);
+    promoteMainWindow('fail-load');
+  });
+
+  mainWindow.webContents.on('render-process-gone', (_event, details) => {
+    bootLog('webContents:render-process-gone', details || {});
+  });
+
+  mainWindow.webContents.on('console-message', (_event, level, message, line, sourceId) => {
+    if (level >= 2) bootLog('renderer-console', { level, message, line, sourceId });
   });
 
   mainWindow.webContents.on('before-input-event', (event, input) => {
@@ -2044,13 +2326,8 @@ async function createWindow() {
   });
 
   mainWindow.once('ready-to-show', () => {
-    mainWindow.show();
-    sendWindowState(mainWindow);
-    // 主窗就绪后再恢复魔方，保证 IPC 广播与页面加载都可用
-    if (readDesktopBehaviorSettings().cubeRemote) {
-      createCubeRemoteWindow({ enabled: true });
-      broadcastCubeRemoteEnabledState(true);
-    }
+    bootLog('window:ready-to-show');
+    promoteMainWindow('ready-to-show');
   });
 
   mainWindow.on('maximize', () => sendWindowState(mainWindow));
@@ -2088,6 +2365,10 @@ async function createWindow() {
       clearTimeout(mainWindowStateTimer);
       mainWindowStateTimer = null;
     }
+    if (absoluteShowTimer) {
+      clearTimeout(absoluteShowTimer);
+      absoluteShowTimer = null;
+    }
     closeOverlayWindows();
     mainWindow = null;
   });
@@ -2108,16 +2389,31 @@ async function createWindow() {
     setTimeout(() => applyWindowedBounds(mainWindow), 50);
   });
 
-  await mainWindow.loadURL(`http://127.0.0.1:${port}`);
+  // 创建即 show：任务栏立刻有按钮（可能先是深色底）。内容在 load 完成后刷出。
+  promoteMainWindow('create');
+  const appUrl = `http://127.0.0.1:${port}/`;
+  try {
+    bootLog('createWindow:loadURL', { url: appUrl });
+    // 不要只 await 一次：打包后首连常 ERR_FAILED(-2)，短暂重试即可，不必整页二次进入。
+    await loadMainWindowUrl(mainWindow, appUrl, { attempts: 6, delayMs: 200 });
+    bootLog('createWindow:loadURL-resolved');
+  } catch (e) {
+    bootLog('createWindow:loadURL-failed', e && e.message ? e.message : String(e));
+    console.error('Main window loadURL failed:', e && e.message ? e.message : e);
+    promoteMainWindow('load-error');
+  }
 }
 
-// 在 app ready 前固定独立 userData，避免与原版 %APPDATA%\Mineradio 冲突。
-// 允许验收脚本通过 MINERADIO_LITE_USER_DATA 注入临时干净目录。
+// 安装版把设置、Cookie 与 Chromium 缓存放在安装目录，避免占用 C 盘。
+// 开发环境保持独立 AppData；验收脚本可通过环境变量注入临时目录。
 try {
   const isolatedUserData = process.env.MINERADIO_LITE_USER_DATA
     ? path.resolve(process.env.MINERADIO_LITE_USER_DATA)
-    : path.join(app.getPath('appData'), APP_USER_DATA_DIR);
+    : app.isPackaged
+      ? path.join(path.dirname(process.execPath), INSTALL_USER_DATA_DIR)
+      : path.join(app.getPath('appData'), APP_USER_DATA_DIR);
   app.setPath('userData', isolatedUserData);
+  app.setPath('sessionData', isolatedUserData);
 } catch (e) {
   console.warn('Lite userData isolation failed:', e.message);
 }

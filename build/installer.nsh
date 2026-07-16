@@ -38,6 +38,7 @@
 !include WinMessages.nsh
 
 !define MINERADIO_INSTALL_MARKER ".mineradio-lite-install-root"
+!define UNINSTALL_SECTION_NAME "程序文件（必选）"
 
 !ifndef BUILD_UNINSTALLER
   Var MineradioWelcomePage
@@ -72,6 +73,18 @@
   Call un.MineradioRemoveInstalledFiles
 !macroend
 
+!macro customUnInstallSection
+  Section /o "un.删除用户数据（设置、缓存和登录状态）" UNSEC_USER_DATA
+    RMDir /r "$INSTDIR\user-data"
+    SetShellVarContext current
+    RMDir /r "$APPDATA\Mineradio Lite"
+    RMDir /r "$APPDATA\mineradio-lite"
+    RMDir /r "$LOCALAPPDATA\Mineradio Lite"
+    RMDir /r "$LOCALAPPDATA\mineradio-lite"
+    RMDir "$INSTDIR"
+  SectionEnd
+!macroend
+
 !macro customWelcomePage
   Page custom MineradioWelcomeShow
 !macroend
@@ -85,19 +98,7 @@
 !macroend
 
 !macro customFinishPage
-  !ifndef HIDE_RUN_AFTER_FINISH
-    Function MineradioFinishStartApp
-      ${If} ${isUpdated}
-        StrCpy $1 "--updated"
-      ${Else}
-        StrCpy $1 ""
-      ${EndIf}
-      ${StdUtils.ExecShellAsUser} $0 "$launchLink" "open" "$1"
-    FunctionEnd
-
-    !define MUI_FINISHPAGE_RUN
-    !define MUI_FINISHPAGE_RUN_FUNCTION "MineradioFinishStartApp"
-  !endif
+  ; 不提供“运行 Mineradio Lite”勾选项：安装完成后只关闭向导，由用户自行从桌面/开始菜单启动。
   !define MUI_PAGE_CUSTOMFUNCTION_SHOW MineradioTintCommonControls
   !insertmacro MUI_PAGE_FINISH
 !macroend
@@ -368,6 +369,9 @@ FunctionEnd
 
 Function MineradioNormalizeInstallDir
   Exch $0
+  Push $1
+  Push $2
+  Push $3
   Push "$0"
   Call MineradioTrimInstallDir
   Pop $0
@@ -393,11 +397,16 @@ Function MineradioNormalizeInstallDir
   ${AndIf} $2 != "\mineradio lite"
     StrCpy $0 "$0\Mineradio Lite"
   ${EndIf}
+  Pop $3
+  Pop $2
+  Pop $1
   Exch $0
 FunctionEnd
 
 Function MineradioTrimInstallDir
   Exch $0
+  Push $1
+  Push $2
 
   trim:
     StrLen $1 "$0"
@@ -409,22 +418,65 @@ Function MineradioTrimInstallDir
       ${EndIf}
     ${EndIf}
 
+  Pop $2
+  Pop $1
   Exch $0
 FunctionEnd
 
 Function MineradioInstallDirLooksOwned
   Exch $0
+  Push $1
   StrCpy $1 "0"
 
   IfFileExists "$0\${MINERADIO_INSTALL_MARKER}" 0 +2
     StrCpy $1 "1"
 
   StrCpy $0 "$1"
+  Pop $1
   Exch $0
+FunctionEnd
+
+Function MineradioInstallDirContainsOnlyUserData
+  Exch $0
+  Push $1
+  Push $2
+  Push $3
+  StrCpy $1 "$0"
+  StrCpy $3 "0"
+
+  IfFileExists "$1\user-data\*.*" 0 done
+  FindFirst $0 $2 "$1\*.*"
+  StrCpy $3 "1"
+
+  loop:
+    StrCmp $2 "" close
+    StrCmp $2 "." next
+    StrCmp $2 ".." next
+    StrCmp $2 "user-data" next
+    StrCpy $3 "0"
+    Goto close
+
+  next:
+    FindNext $0 $2
+    Goto loop
+
+  close:
+    FindClose $0
+
+  done:
+    StrCpy $0 "$3"
+    Pop $3
+    Pop $2
+    Pop $1
+    Exch $0
 FunctionEnd
 
 Function MineradioExistingInstallPathCanBeAdopted
   Exch $0
+  Push $1
+  Push $2
+  Push $3
+  Push $4
   StrCpy $1 "0"
 
   ${If} $0 == ""
@@ -445,12 +497,17 @@ Function MineradioExistingInstallPathCanBeAdopted
     Goto done
   ${EndIf}
 
-  IfFileExists "$2\*.*" 0 done
   IfFileExists "$2\${MINERADIO_INSTALL_MARKER}" adopt 0
   IfFileExists "$2\${PRODUCT_FILENAME}.exe" adopt 0
   IfFileExists "$2\resources\app.asar" adopt 0
   IfFileExists "$2\resources\app\package.json" adopt 0
   IfFileExists "$2\resources\app\server.js" adopt 0
+  Push "$2"
+  Call MineradioInstallDirContainsOnlyUserData
+  Pop $4
+  ${If} $4 == "1"
+    Goto adopt
+  ${EndIf}
   Goto done
 
   adopt:
@@ -458,6 +515,10 @@ Function MineradioExistingInstallPathCanBeAdopted
 
   done:
     StrCpy $0 "$1"
+    Pop $4
+    Pop $3
+    Pop $2
+    Pop $1
     Exch $0
 FunctionEnd
 
@@ -515,6 +576,11 @@ FunctionEnd
 
 Function MineradioRegisteredInstallDirCanBeAdopted
   Exch $0
+  Push $1
+  Push $2
+  Push $3
+  Push $4
+  Push $5
   StrCpy $1 "0"
 
   ${If} $0 == ""
@@ -583,11 +649,19 @@ Function MineradioRegisteredInstallDirCanBeAdopted
 
   done:
     StrCpy $0 "$1"
+    Pop $5
+    Pop $4
+    Pop $3
+    Pop $2
+    Pop $1
     Exch $0
 FunctionEnd
 
 Function MineradioInstallDirIsEmpty
   Exch $0
+  Push $1
+  Push $2
+  Push $3
   FindFirst $1 $2 "$0\*.*"
   StrCpy $3 "1"
 
@@ -605,6 +679,9 @@ Function MineradioInstallDirIsEmpty
   done:
     FindClose $1
     StrCpy $0 "$3"
+    Pop $3
+    Pop $2
+    Pop $1
     Exch $0
 FunctionEnd
 
@@ -910,17 +987,22 @@ FunctionEnd
 
 Function un.MineradioInstallDirLooksOwned
   Exch $0
+  Push $1
   StrCpy $1 "0"
 
   IfFileExists "$0\${MINERADIO_INSTALL_MARKER}" 0 +2
     StrCpy $1 "1"
 
   StrCpy $0 "$1"
+  Pop $1
   Exch $0
 FunctionEnd
 
 Function un.MineradioNormalizeInstallDir
   Exch $0
+  Push $1
+  Push $2
+  Push $3
   Push "$0"
   Call un.MineradioTrimInstallDir
   Pop $0
@@ -946,11 +1028,16 @@ Function un.MineradioNormalizeInstallDir
   ${AndIf} $2 != "\mineradio lite"
     StrCpy $0 "$0\Mineradio Lite"
   ${EndIf}
+  Pop $3
+  Pop $2
+  Pop $1
   Exch $0
 FunctionEnd
 
 Function un.MineradioTrimInstallDir
   Exch $0
+  Push $1
+  Push $2
 
   trim:
     StrLen $1 "$0"
@@ -962,6 +1049,8 @@ Function un.MineradioTrimInstallDir
       ${EndIf}
     ${EndIf}
 
+  Pop $2
+  Pop $1
   Exch $0
 FunctionEnd
 
@@ -992,6 +1081,7 @@ FunctionEnd
 Function un.MineradioRemoveInstalledFiles
   SetOutPath $TEMP
 
+  Delete "$INSTDIR\${MINERADIO_INSTALL_MARKER}"
   Delete "$INSTDIR\${PRODUCT_FILENAME}.exe"
   Delete "$INSTDIR\Uninstall ${PRODUCT_FILENAME}.exe"
   Delete "$INSTDIR\uninstallerIcon.ico"
@@ -1014,9 +1104,9 @@ Function un.MineradioRemoveInstalledFiles
   Delete "$INSTDIR\vk_swiftshader_icd.json"
   Delete "$INSTDIR\vulkan-1.dll"
 
-  RMDir "$INSTDIR\locales"
-  RMDir "$INSTDIR\resources"
-  RMDir "$INSTDIR\swiftshader"
+  RMDir /r "$INSTDIR\locales"
+  RMDir /r "$INSTDIR\resources"
+  RMDir /r "$INSTDIR\swiftshader"
 
   RMDir "$INSTDIR"
 FunctionEnd

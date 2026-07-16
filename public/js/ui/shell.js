@@ -10,6 +10,15 @@ export function navigate(route) {
   if (!target) return;
 
   if (route === currentRoute) {
+    if (!document.body.dataset.route) {
+      document.body.dataset.route = route;
+      document.querySelectorAll('[data-route]').forEach((button) => {
+        button.classList.toggle('active', button.dataset.route === route);
+      });
+      target.classList.remove('page-enter', 'page-leave');
+      target.classList.add('active');
+      return;
+    }
     // 同路由重复进入时，给一次轻量重入反馈
     target.classList.remove('page-enter');
     // force reflow

@@ -25,6 +25,8 @@
   var lastCover = '';
   var lastSkin = '';
   var dragging = false;
+  var dragTarget = null;
+  var dragPointerId = null;
   var dragLast = { x: 0, y: 0 };
   var moved = false;
 
@@ -138,7 +140,9 @@
     document.body.classList.add('dragging');
     dragLast.x = evt.screenX;
     dragLast.y = evt.screenY;
-    try { evt.currentTarget.setPointerCapture(evt.pointerId); } catch (e) {}
+    dragTarget = evt.target.closest('.play-btn, [data-drag-handle]') || evt.target.closest('.skin') || activeRoot();
+    dragPointerId = evt.pointerId;
+    try { dragTarget.setPointerCapture(dragPointerId); } catch (e) {}
   }
 
   document.addEventListener('pointerdown', function (evt) {
@@ -166,10 +170,19 @@
     if (!dragging) return;
     dragging = false;
     document.body.classList.remove('dragging');
+    var target = dragTarget;
+    var pointerId = dragPointerId;
+    dragTarget = null;
+    dragPointerId = null;
+    try {
+      if (target && target.hasPointerCapture(pointerId)) target.releasePointerCapture(pointerId);
+    } catch (e) {}
     setTimeout(function () { moved = false; }, 0);
   }
   window.addEventListener('pointerup', endDrag);
   window.addEventListener('pointercancel', endDrag);
+  document.addEventListener('lostpointercapture', endDrag);
+  window.addEventListener('blur', endDrag);
 
   window.__mineradioCubeApplyState = applyState;
   window.addEventListener('message', function (event) {
